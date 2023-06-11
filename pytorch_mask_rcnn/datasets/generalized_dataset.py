@@ -1,7 +1,6 @@
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 import torch
 from torchvision import transforms
 

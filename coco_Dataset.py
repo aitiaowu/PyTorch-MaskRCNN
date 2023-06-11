@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 
 class AgriRobotDataset(CocoDetection):
-    def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None, to_tensor=False):
+    def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None, to_tensor=True):
         self.root = root
         self.transforms = transforms
         self.to_tensor = to_tensor
@@ -23,7 +23,7 @@ class AgriRobotDataset(CocoDetection):
         
         path = coco.loadImgs(img_id)[0]['file_name'] 
         image_name = os.path.join(self.root, path) 
-        img = Image.open(image_name).convert('RGB') #img
+        image = Image.open(image_name).convert('RGB') #img
 
         boxes, labels, labels_names, areas, iscrowd, masks = [], [], [], [], [], []
         for ann in coco_annotation:
@@ -38,23 +38,20 @@ class AgriRobotDataset(CocoDetection):
             iscrowd.append(ann['iscrowd'])
             masks.append(coco.annToMask(ann))
             num_instances = len(ann['segmentation'])
-        target = {
-                "boxes": np.array(boxes), #gt_bbox + num_instances: cnt boxes
-                "labels": np.array(labels), #gt_masks
-                "labels_names": np.array(labels_names), #gt_class_ids > cat_id
-                "image_id": np.array([img_id]), #img_id
-                "image_name": path, 
-                "area": np.array(areas),
-                "masks": np.array(masks),
-                "num_instances": np.array(num_instances)
+        target = {  "image_id": torch.tensor(img_id),
+                "boxes": torch.tensor(boxes), #gt_bbox + num_instances: cnt boxes
+                "labels": torch.tensor(labels), #gt_masks
+                "masks": torch.tensor(masks),
                 }
+        image = T.ToTensor()(image)
+        
         if self.to_tensor:
                 target["boxes"] = torch.tensor(target["boxes"], dtype=torch.float32),
-                target["image_id"] = torch.tensor(target["image_id"]),
-                target["area"] = torch.tensor(target["area"], dtype=torch.float32),
+                target["labels"] = torch.tensor(target["labels"]),
                 target["masks"] = torch.tensor(target["masks"], dtype=torch.uint8)
-
+                #print('aaa')
+                
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
+            image, target = self.transforms(image, target)
            
-        return img, target
+        return image, target

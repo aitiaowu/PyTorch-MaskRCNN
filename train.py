@@ -7,6 +7,7 @@ import time
 import torch
 
 import pytorch_mask_rcnn as pmr
+from coco_Dataset import AgriRobotDataset
     
     
 def main(args):
@@ -16,19 +17,26 @@ def main(args):
     print("\ndevice: {}".format(device))
         
     # ---------------------- prepare data loader ------------------------------- #
-    
+    '''
     dataset_train = pmr.datasets(args.dataset, args.data_dir, "train2017", train=True)
     indices = torch.randperm(len(dataset_train)).tolist()
     d_train = torch.utils.data.Subset(dataset_train, indices)
     
     d_test = pmr.datasets(args.dataset, args.data_dir, "val2017", train=True) # set train=True for eval
-        
+    '''    
+    path = "/content/DATA"
+    images_path = os.path.join(path, 'images')
+    ann_file = os.path.join(path, 'annotations.json')
+    dataset_train = AgriRobotDataset(root=images_path, annFile=ann_file, to_tensor=None)
+    indices = torch.randperm(len(dataset_train)).tolist()
+    d_train = torch.utils.data.Subset(dataset_train, indices)
+
     args.warmup_iters = max(1000, len(d_train))
     
     # -------------------------------------------------------------------------- #
 
     print(args)
-    num_classes = max(d_train.dataset.classes) + 1 # including background class
+    num_classes = 1 + 1 # including background class
     model = pmr.maskrcnn_resnet50(True, num_classes).to(device)
     
     params = [p for p in model.parameters() if p.requires_grad]
@@ -65,7 +73,7 @@ def main(args):
         A = time.time() - A
         
         B = time.time()
-        eval_output, iter_eval = pmr.evaluate(model, d_test, device, args)
+        eval_output, iter_eval = pmr.evaluate(model, dataset_train, device, args)
         B = time.time() - B
 
         trained_epoch = epoch + 1
@@ -97,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--use-cuda", action="store_true")
     
     parser.add_argument("--dataset", default="coco", help="coco or voc")
-    parser.add_argument("--data-dir", default="E:/PyTorch/data/coco2017")
+    parser.add_argument("--data-dir", default="/content/DATA")
     parser.add_argument("--ckpt-path")
     parser.add_argument("--results")
     
@@ -107,7 +115,7 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--weight-decay", type=float, default=0.0001)
     
-    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--iters", type=int, default=10, help="max iters per epoch, -1 denotes auto")
     parser.add_argument("--print-freq", type=int, default=100, help="frequency of printing losses")
     args = parser.parse_args()
