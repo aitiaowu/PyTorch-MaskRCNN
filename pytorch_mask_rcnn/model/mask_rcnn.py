@@ -134,7 +134,7 @@ class MaskRCNN(nn.Module):
         
         #------------ Transformer --------------------------
         self.transformer = Transformer(
-            min_size=800, max_size=1333, 
+            min_size=720, max_size=1280, 
             image_mean=[0.485, 0.456, 0.406], 
             image_std=[0.229, 0.224, 0.225])
         
@@ -146,6 +146,8 @@ class MaskRCNN(nn.Module):
         feature = self.backbone(image)
         
         proposal, rpn_losses = self.rpn(feature, image_shape, target)
+        #print(feature.shape,proposal.shape,image_shape,rpn_losses)
+        
         result, roi_losses = self.head(feature, proposal, image_shape, target)
         
         if self.training:

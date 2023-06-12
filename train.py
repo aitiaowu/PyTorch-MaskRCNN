@@ -3,11 +3,11 @@ import glob
 import os
 import re
 import time
-
+import random
 import torch
 
 import pytorch_mask_rcnn as pmr
-from coco_Dataset import AgriRobotDataset
+#from coco_Dataset import AgriRobotDataset
     
     
 def main(args):
@@ -17,25 +17,42 @@ def main(args):
     print("\ndevice: {}".format(device))
         
     # ---------------------- prepare data loader ------------------------------- #
-    '''
-    dataset_train = pmr.datasets(args.dataset, args.data_dir, "train2017", train=True)
-    indices = torch.randperm(len(dataset_train)).tolist()
-    d_train = torch.utils.data.Subset(dataset_train, indices)
     
-    d_test = pmr.datasets(args.dataset, args.data_dir, "val2017", train=True) # set train=True for eval
-    '''    
-    path = "/content/DATA"
-    images_path = os.path.join(path, 'images')
-    ann_file = os.path.join(path, 'annotations.json')
-    dataset_train = AgriRobotDataset(root=images_path, annFile=ann_file, to_tensor=None)
-    indices = torch.randperm(len(dataset_train)).tolist()
-    d_train = torch.utils.data.Subset(dataset_train, indices)
+    from torch.utils.data.sampler import SubsetRandomSampler
 
-    args.warmup_iters = max(1000, len(d_train))
+    batch_size = 1
+    dataset = pmr.datasets('coco', "/content/DATA", train=True)
+
+    dataset_size = len(dataset)  # 总的数据集大小
+    indices = list(range(dataset_size))  # 生成包含所有索引的列表
+    random.shuffle(indices)  # 随机打乱索引列表
+
+    # 设置训练集和验证集的比例
+    train_ratio = 0.8  # 训练集占80%
+    val_ratio = 0.1  # 验证集占10%，剩下的10%是测试集
+
+    # 计算各个集合的大小
+    train_size = int(train_ratio * dataset_size)
+    val_size = int(val_ratio * dataset_size)
+
+    # 切分索引列表
+    train_indices = indices[:train_size]  # 前80%是训练集
+    val_indices = indices[train_size:(train_size + val_size)]  # 接下来10%是验证集
+    test_indices = indices[(train_size + val_size):]  # 剩下的是测试集
+    train_sampler = SubsetRandomSampler(train_indices)
+    val_sampler = SubsetRandomSampler(val_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
+
+    # Create train/val/test dataloader
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler, num_workers=0,drop_last=True)
+    val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=val_sampler, num_workers=0,drop_last=True)
+    test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=test_sampler, num_workers=0, drop_last=True)
+
+    args.warmup_iters = max(1000, len(train_loader))
     
     # -------------------------------------------------------------------------- #
-
-    print(args)
+    print(len(train_loader))
+    #print(args)
     num_classes = 1 + 1 # including background class
     model = pmr.maskrcnn_resnet50(True, num_classes).to(device)
     
@@ -69,11 +86,11 @@ def main(args):
         A = time.time()
         args.lr_epoch = lr_lambda(epoch) * args.lr
         print("lr_epoch: {:.5f}, factor: {:.5f}".format(args.lr_epoch, lr_lambda(epoch)))
-        iter_train = pmr.train_one_epoch(model, optimizer, d_train, device, epoch, args)
+        iter_train = pmr.train_one_epoch(model, optimizer, train_loader, device, epoch, args)
         A = time.time() - A
         
         B = time.time()
-        eval_output, iter_eval = pmr.evaluate(model, dataset_train, device, args)
+        eval_output, iter_eval = pmr.evaluate(model, val_loader, device, args)
         B = time.time() - B
 
         trained_epoch = epoch + 1

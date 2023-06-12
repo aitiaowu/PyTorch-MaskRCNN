@@ -19,7 +19,9 @@ class GeneralizedDataset:
         image = self.get_image(img_id)
         image = transforms.ToTensor()(image)
         target = self.get_target(img_id) if self.train else {}
-        return image, target   
+
+        if target is not None:
+            return image, target  
     
     def __len__(self):
         return len(self.ids)

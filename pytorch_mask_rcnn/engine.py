@@ -24,6 +24,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
         num_iters = epoch * len(data_loader) + i
+        image = image.squeeze(0).to(device)  # [C, H, W]
+        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+
         if num_iters <= args.warmup_iters:
             r = num_iters / args.warmup_iters
             for j, p in enumerate(optimizer.param_groups):
@@ -51,10 +54,10 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
         
         optimizer.step()
         optimizer.zero_grad()
-        
+        '''
         if num_iters % args.print_freq == 0:
             print("{}\t".format(num_iters), "\t".join("{:.3f}".format(l.item()) for l in losses.values()))
-
+        '''
         t_m.update(time.time() - T)
         if i >= iters - 1:
             break

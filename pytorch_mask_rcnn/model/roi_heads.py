@@ -8,6 +8,7 @@ from .box_ops import BoxCoder, box_iou, process_box, nms
 
 
 def fastrcnn_loss(class_logit, box_regression, label, regression_target):
+    print('class_logit_shape',class_logit.shape, 'label_shape',label.shape)
     classifier_loss = F.cross_entropy(class_logit, label)
 
     N, num_pos = class_logit.shape[0], regression_target.shape[0]
@@ -65,6 +66,8 @@ class RoIHeads(nn.Module):
     def select_training_samples(self, proposal, target):
         gt_box = target['boxes']
         gt_label = target['labels']
+        print(gt_label)
+        aaa
         proposal = torch.cat((proposal, gt_box))
         
         iou = box_iou(gt_box, proposal)
