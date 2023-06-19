@@ -8,6 +8,7 @@ import torch
 
 import pytorch_mask_rcnn as pmr
 #from coco_Dataset import AgriRobotDataset
+#from pytorch_mask_rcnn.datasets.coco_dataset import my_collate_fn
     
     
 def main(args):
@@ -90,15 +91,15 @@ def main(args):
         A = time.time() - A
         
         B = time.time()
-        eval_output, iter_eval = pmr.evaluate(model, val_loader, device, args)
+        #eval_output, iter_eval = pmr.evaluate(model, val_loader, device, args)
         B = time.time() - B
 
         trained_epoch = epoch + 1
         print("training: {:.1f} s, evaluation: {:.1f} s".format(A, B))
-        pmr.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
-        print(eval_output.get_AP())
+        #pmr.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
+        #print(eval_output.get_AP())
 
-        pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
+        pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path)
 
         # it will create many checkpoint files during training, so delete some.
         prefix, ext = os.path.splitext(args.ckpt_path)

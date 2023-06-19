@@ -14,14 +14,17 @@ class GeneralizedDataset:
         self.max_workers = max_workers
         self.verbose = verbose
             
-    def __getitem__(self, i):
-        img_id = self.ids[i]
-        image = self.get_image(img_id)
-        image = transforms.ToTensor()(image)
-        target = self.get_target(img_id) if self.train else {}
+    def __getitem__(self, index):
+      while True:
+          img_id = self.ids[index]
+          image = self.get_image(img_id)
+          image = transforms.ToTensor()(image)
+          target = self.get_target(img_id) if self.train else {}
 
-        if target is not None:
-            return image, target  
+          if target is not None:
+              return image, target
+          else:
+              index = (index + 1) % len(self.ids) 
     
     def __len__(self):
         return len(self.ids)

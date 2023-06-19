@@ -6,14 +6,14 @@ import torch
 
 __all__ = ["save_ckpt", "Meter"]
 
-def save_ckpt(model, optimizer, epochs, ckpt_path, **kwargs):
+def save_ckpt(model, optimizer, epochs, ckpt_path):
     checkpoint = {}
     checkpoint["model"] = model.state_dict()
     checkpoint["optimizer"]  = optimizer.state_dict()
     checkpoint["epochs"] = epochs
         
-    for k, v in kwargs.items():
-        checkpoint[k] = v
+    #for k, v in kwargs.items():
+        #checkpoint[k] = v
         
     prefix, ext = os.path.splitext(ckpt_path)
     ckpt_path = "{}-{}{}".format(prefix, epochs, ext)

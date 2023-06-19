@@ -45,6 +45,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
         
 
         total_loss = sum(losses.values())
+        #print('total_loss:',total_loss)
         
         m_m.update(time.time() - S)
             
@@ -54,16 +55,18 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
         
         optimizer.step()
         optimizer.zero_grad()
-        '''
-        if num_iters % args.print_freq == 0:
-            print("{}\t".format(num_iters), "\t".join("{:.3f}".format(l.item()) for l in losses.values()))
-        '''
+        
+        if num_iters % 500 == 0:
+            print('total_loss:',total_loss)
+            #print("{}\t".format(num_iters), "\t".join("{:.3f}".format(l.item()) for l in losses.values()))
+        
         t_m.update(time.time() - T)
         if i >= iters - 1:
             break
            
     A = time.time() - A
-    print("iter: {:.1f}, total: {:.1f}, model: {:.1f}, backward: {:.1f}".format(1000*A/iters,1000*t_m.avg,1000*m_m.avg,1000*b_m.avg))
+    print('Finish the epoch with iter:', i)
+    #print("iter: {:.1f}, total: {:.1f}, model: {:.1f}, backward: {:.1f}".format(1000*A/iters,1000*t_m.avg,1000*m_m.avg,1000*b_m.avg))
     return A / iters
             
 
@@ -72,7 +75,7 @@ def evaluate(model, data_loader, device, args, generate=True):
     if generate:
         iter_eval = generate_results(model, data_loader, device, args)
 
-    dataset = data_loader #
+    dataset = data_loader 
     iou_types = ["bbox", "segm"]
     coco_evaluator = CocoEvaluator(dataset.coco, iou_types)
 
@@ -106,6 +109,8 @@ def generate_results(model, data_loader, device, args):
     A = time.time()
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
+        image = image.squeeze(0).to(device)  # [C, H, W]
+        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
         
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}

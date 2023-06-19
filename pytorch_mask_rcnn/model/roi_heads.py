@@ -8,7 +8,11 @@ from .box_ops import BoxCoder, box_iou, process_box, nms
 
 
 def fastrcnn_loss(class_logit, box_regression, label, regression_target):
-    print('class_logit_shape',class_logit.shape, 'label_shape',label.shape)
+    #print('class_logit_shape',class_logit.shape, 'label_shape',label.shape)
+    #print("Unique labels:", torch.unique(label))
+    #print("NaN in logits:", torch.isnan(class_logit).any())
+    #print("Inf in logits:", torch.isinf(class_logit).any())
+    #aaa
     classifier_loss = F.cross_entropy(class_logit, label)
 
     N, num_pos = class_logit.shape[0], regression_target.shape[0]
@@ -66,8 +70,8 @@ class RoIHeads(nn.Module):
     def select_training_samples(self, proposal, target):
         gt_box = target['boxes']
         gt_label = target['labels']
-        print(gt_label)
-        aaa
+        #print('gt_label:',gt_label)
+        
         proposal = torch.cat((proposal, gt_box))
         
         iou = box_iou(gt_box, proposal)
@@ -81,7 +85,11 @@ class RoIHeads(nn.Module):
         label = gt_label[matched_idx]
         num_pos = pos_idx.shape[0]
         label[num_pos:] = 0
-        
+
+        #print("Unique_labels_0:", torch.unique(label))
+        #print("Unique_matched_idx:", torch.unique(matched_idx))
+
+
         return proposal, matched_idx, label, regression_target
     
     def fastrcnn_inference(self, class_logit, box_regression, proposal, image_shape):

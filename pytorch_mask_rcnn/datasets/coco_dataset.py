@@ -3,7 +3,11 @@ from PIL import Image
 from torchvision import transforms 
 import torch
 from .generalized_dataset import GeneralizedDataset
-from skimage.transform import resize       
+from skimage.transform import resize  
+
+def my_collate_fn(batch):
+    batch = list(filter(lambda x: x is not None, batch))
+    return torch.utils.data.dataloader.default_collate(batch)
         
 class COCODataset(GeneralizedDataset):
     def __init__(self, data_dir, train=False):
@@ -50,20 +54,21 @@ class COCODataset(GeneralizedDataset):
         boxes = []
         labels = []
         masks = []
-
+        #print('pre_labels',labels)
         if len(anns) > 0:
             for ann in anns:
               num_instances = len(ann['segmentation'])
               label = ann["category_id"]
+              bianhao = ann["image_id"]
               #cleaning
-              '''              
-              if label != 0 and label != 1 :  # change this list to your own valid category ids
+                           
+              if label != 1 or label == 5 or label == 6 :  # change this list to your own valid category ids
                 continue
 
-              if num_instances < 0 or num_instances >= 4:  # adjust this condition according to your need
+              if num_instances < 0 or num_instances >= 2:  # adjust this condition according to your need
                 continue
 
-              '''
+              labels.append(ann["category_id"])
               boxes.append(ann['bbox'] )    
               mask = self.coco.annToMask(ann)
               # Resize the mask
@@ -71,16 +76,18 @@ class COCODataset(GeneralizedDataset):
 
               mask = torch.tensor(mask, dtype=torch.uint8)
               masks.append(mask)
-
+        
         if len(boxes) == 0 or len(labels) == 0 or len(masks) == 0:
             return None
         
         boxes = torch.tensor(boxes, dtype=torch.float32)
         boxes = self.convert_to_xyxy(boxes)
-        labels = torch.tensor(labels)
+        labels = torch.tensor(labels[0])
         masks = torch.stack(masks)
 
         target = dict(image_id=torch.tensor([img_id]), boxes=boxes, labels=labels, masks=masks)
+        #print('img_id:', bianhao, 'label:', labels, 'data_id:',img_id)
+        #aaa
         return target
     
     
