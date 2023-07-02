@@ -87,7 +87,9 @@ def main(args):
         A = time.time()
         args.lr_epoch = lr_lambda(epoch) * args.lr
         print("lr_epoch: {:.5f}, factor: {:.5f}".format(args.lr_epoch, lr_lambda(epoch)))
+
         iter_train = pmr.train_one_epoch(model, optimizer, train_loader, device, epoch, args)
+        
         A = time.time() - A
         
         B = time.time()
@@ -99,8 +101,8 @@ def main(args):
         #pmr.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
         #print(eval_output.get_AP())
 
-        pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path)
-
+        #pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path)
+        '''
         # it will create many checkpoint files during training, so delete some.
         prefix, ext = os.path.splitext(args.ckpt_path)
         ckpts = glob.glob(prefix + "-*" + ext)
@@ -109,7 +111,7 @@ def main(args):
         if len(ckpts) > n:
             for i in range(len(ckpts) - n):
                 os.system("rm {}".format(ckpts[i]))
-        
+        '''
     # -------------------------------------------------------------------------- #
 
     print("\ntotal time of this training: {:.1f} s".format(time.time() - since))
@@ -124,7 +126,7 @@ if __name__ == "__main__":
     
     parser.add_argument("--dataset", default="coco", help="coco or voc")
     parser.add_argument("--data-dir", default="/content/DATA")
-    parser.add_argument("--ckpt-path")
+    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints")
     parser.add_argument("--results")
     
     parser.add_argument("--seed", type=int, default=3)
@@ -134,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--weight-decay", type=float, default=0.0001)
     
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--iters", type=int, default=10, help="max iters per epoch, -1 denotes auto")
+    parser.add_argument("--iters", type=int, default=-1, help="max iters per epoch, -1 denotes auto")
     parser.add_argument("--print-freq", type=int, default=100, help="frequency of printing losses")
     args = parser.parse_args()
     

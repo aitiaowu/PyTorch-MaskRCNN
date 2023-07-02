@@ -2,13 +2,16 @@ import sys
 import time
 
 import torch
-
+from .utils import save_ckpt
 from .utils import Meter, TextArea
 try:
     from .datasets import CocoEvaluator, prepare_for_coco
 except:
     pass
+from torch.utils.tensorboard import SummaryWriter
 
+
+writer = SummaryWriter()
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
     for p in optimizer.param_groups:
@@ -45,8 +48,17 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
         
 
         total_loss = sum(losses.values())
-        #print('total_loss:',total_loss)
-        
+        print('iter',num_iters, 'total_loss:{:.5f}'.format(total_loss.item()))
+
+        #tensorboard
+        writer.add_scalar("Loss/all", total_loss.item(), num_iters)
+        writer.flush()
+
+        #saving ckpt
+        if total_loss <= 0.003:
+          save_ckpt(model, optimizer, num_iters + i, "/content/drive/MyDrive/Study/Thesis/checkpoints/model" + f'_{epoch}_{i}.pth')
+          print('saving checkpoints')
+
         m_m.update(time.time() - S)
             
         S = time.time()
@@ -55,11 +67,11 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
         
         optimizer.step()
         optimizer.zero_grad()
+
         
-        if num_iters % 500 == 0:
-            print('total_loss:',total_loss)
-            #print("{}\t".format(num_iters), "\t".join("{:.3f}".format(l.item()) for l in losses.values()))
-        
+
+        #eval_output, iter_eval = evaluate(model, data_loader, device, args)
+
         t_m.update(time.time() - T)
         if i >= iters - 1:
             break
@@ -67,7 +79,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
     A = time.time() - A
     print('Finish the epoch with iter:', i)
     #print("iter: {:.1f}, total: {:.1f}, model: {:.1f}, backward: {:.1f}".format(1000*A/iters,1000*t_m.avg,1000*m_m.avg,1000*b_m.avg))
-    return A / iters
+    return A / iters, total_loss.item()
             
 
 def evaluate(model, data_loader, device, args, generate=True):
