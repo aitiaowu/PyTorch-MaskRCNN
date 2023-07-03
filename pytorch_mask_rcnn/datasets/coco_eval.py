@@ -8,7 +8,7 @@ from pycocotools.coco import COCO
 
 
 class CocoEvaluator:
-    def __init__(self, coco_gt, iou_types="bbox"):
+    def __init__(self, coco_gt, iou_types=["bbox", "segm"]):
         if isinstance(iou_types, str):
             iou_types = [iou_types]
             

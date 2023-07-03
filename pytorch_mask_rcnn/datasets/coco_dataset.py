@@ -2,6 +2,7 @@ import os
 from PIL import Image
 from torchvision import transforms 
 import torch
+import random
 from .generalized_dataset import GeneralizedDataset
 from skimage.transform import resize  
 
@@ -89,5 +90,7 @@ class COCODataset(GeneralizedDataset):
         #print('img_id:', bianhao, 'label:', labels, 'data_id:',img_id)
         #aaa
         return target
+
+
     
     

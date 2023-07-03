@@ -13,12 +13,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 writer = SummaryWriter()
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
+def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, args):
     for p in optimizer.param_groups:
         p["lr"] = args.lr_epoch
 
     iters = len(data_loader) if args.iters < 0 else args.iters
-
+    min_val_loss = float('inf')
+    accum_iter = 4
     t_m = Meter("total")
     m_m = Meter("model")
     b_m = Meter("backward")
@@ -37,40 +38,41 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
         
                    
         image = image.to(device)
-        #print(image.shape)
-        
-
         target = {k: v.to(device) for k, v in target.items()}
-        
+
         S = time.time()
-        
+        #print(image.shape,target['masks'].shape,target['boxes'].shape)
+
         losses = model(image, target)
         
 
         total_loss = sum(losses.values())
+        #total_loss = sum(losses.values())/accum_iter
         print('iter',num_iters, 'total_loss:{:.5f}'.format(total_loss.item()))
 
         #tensorboard
         writer.add_scalar("Loss/all", total_loss.item(), num_iters)
         writer.flush()
 
-        #saving ckpt
-        if total_loss <= 0.003:
-          save_ckpt(model, optimizer, num_iters + i, "/content/drive/MyDrive/Study/Thesis/checkpoints/model" + f'_{epoch}_{i}.pth')
-          print('saving checkpoints')
-
         m_m.update(time.time() - S)
             
         S = time.time()
+
         total_loss.backward()
         b_m.update(time.time() - S)
-        
-        optimizer.step()
-        optimizer.zero_grad()
 
+        # weights update gradient accumulation
+        if ((i + 1) % accum_iter == 0) or (i + 1 == len(data_loader)):
+            optimizer.step()
+            optimizer.zero_grad()
         
-
-        #eval_output, iter_eval = evaluate(model, data_loader, device, args)
+        #saving ckpt
+        if total_loss <= 0.002:
+          save_ckpt(model, optimizer, num_iters + i, "/content/drive/MyDrive/Study/Thesis/checkpoints/model" + f'_{epoch}_{i}.pth')
+          print('saving checkpoints')
+        
+        if ((i + 1) % 1 == 0):
+          generate_results(model, val_loader, device, args)aaa
 
         t_m.update(time.time() - T)
         if i >= iters - 1:
@@ -104,15 +106,15 @@ def evaluate(model, data_loader, device, args, generate=True):
     coco_evaluator.summarize()
 
     output = sys.stdout
-    sys.stdout = temp
-        
+    sys.stdout = temp 
+    #print(output)   
     return output, iter_eval
     
     
 # generate results file   
 @torch.no_grad()   
 def generate_results(model, data_loader, device, args):
-    iters = len(data_loader) if args.iters < 0 else args.iters
+    iters = 500 if args.iters < 0 else args.iters
         
     t_m = Meter("total")
     m_m = Meter("model")
@@ -123,13 +125,16 @@ def generate_results(model, data_loader, device, args):
         T = time.time()
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-        
+
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
 
         S = time.time()
         #torch.cuda.synchronize()
+        #print(image.shape,target['masks'].shape,target['boxes'].shape)
+        
         output = model(image)
+
         m_m.update(time.time() - S)
         
         prediction = {target["image_id"].item(): {k: v.cpu() for k, v in output.items()}}
