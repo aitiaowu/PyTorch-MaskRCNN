@@ -28,6 +28,7 @@ class CocoEvaluator:
         image_ids = list(set([res["image_id"] for res in coco_results]))
         for iou_type in self.iou_types:
             coco_eval = self.coco_eval[iou_type]
+            print(coco_results)
             coco_eval.cocoDt = self.coco_gt.loadRes(coco_results) # use the method loadRes
             coco_eval.params.imgIds = image_ids # ids of images to be evaluated
             coco_eval.evaluate() # 15.4s

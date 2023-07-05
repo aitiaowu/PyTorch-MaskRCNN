@@ -54,7 +54,7 @@ def main(args):
     #print("\nevaluating...\n")
 
     B = time.time()
-    eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args)
+    eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
     B = time.time() - B
 
     print(eval_output.get_AP())

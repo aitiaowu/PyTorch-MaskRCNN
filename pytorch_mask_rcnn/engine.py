@@ -1,6 +1,6 @@
 import sys
 import time
-
+import os
 import torch
 from .utils import save_ckpt
 from .utils import Meter, TextArea
@@ -18,13 +18,15 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
         p["lr"] = args.lr_epoch
 
     iters = len(data_loader) if args.iters < 0 else args.iters
-    min_val_loss = float('inf')
     accum_iter = 4
     t_m = Meter("total")
     m_m = Meter("model")
     b_m = Meter("backward")
     model.train()
     A = time.time()
+    min_val_loss = float('inf')
+    val_loss = 10
+    best_model_path = None  # 保存最佳模型的路径
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
         num_iters = epoch * len(data_loader) + i
@@ -50,9 +52,6 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
         #total_loss = sum(losses.values())/accum_iter
         print('iter',num_iters, 'total_loss:{:.5f}'.format(total_loss.item()))
 
-        #tensorboard
-        writer.add_scalar("Loss/all", total_loss.item(), num_iters)
-        writer.flush()
 
         m_m.update(time.time() - S)
             
@@ -65,14 +64,26 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
         if ((i + 1) % accum_iter == 0) or (i + 1 == len(data_loader)):
             optimizer.step()
             optimizer.zero_grad()
-        
-        #saving ckpt
-        if total_loss <= 0.002:
-          save_ckpt(model, optimizer, num_iters + i, "/content/drive/MyDrive/Study/Thesis/checkpoints/model" + f'_{epoch}_{i}.pth')
-          print('saving checkpoints')
-        
-        if ((i + 1) % 1 == 0):
-          generate_results(model, val_loader, device, args)aaa
+
+        # validation
+        if ((i + 1) % 500 == 0):
+          _,val_loss = generate_results(model, val_loader, device, args)
+          print('val_loss',val_loss.item())
+          if val_loss < min_val_loss:
+                min_val_loss = val_loss
+                model_path = f"/content/drive/MyDrive/Study/Thesis/checkpoints/model_{epoch}.pth"
+                
+                if best_model_path is not None and os.path.exists(best_model_path):
+                    os.remove(best_model_path)
+
+                save_ckpt(model, optimizer, num_iters + i, model_path)
+                best_model_path = model_path  # 更新最佳模型的路径
+                print('Best model saved at', best_model_path)
+
+        #tensorboard
+        writer.add_scalar("train_loss", total_loss.item(), num_iters)
+        writer.add_scalar("val_loss", val_loss, num_iters)
+        writer.flush()
 
         t_m.update(time.time() - T)
         if i >= iters - 1:
@@ -114,8 +125,8 @@ def evaluate(model, data_loader, device, args, generate=True):
 # generate results file   
 @torch.no_grad()   
 def generate_results(model, data_loader, device, args):
-    iters = 500 if args.iters < 0 else args.iters
-        
+    iters = 200 if args.iters < 0 else args.iters
+    val_loss = 0    
     t_m = Meter("total")
     m_m = Meter("model")
     coco_results = []
@@ -130,10 +141,8 @@ def generate_results(model, data_loader, device, args):
         target = {k: v.to(device) for k, v in target.items()}
 
         S = time.time()
-        #torch.cuda.synchronize()
-        #print(image.shape,target['masks'].shape,target['boxes'].shape)
-        
         output = model(image)
+        
 
         m_m.update(time.time() - S)
         
@@ -143,11 +152,34 @@ def generate_results(model, data_loader, device, args):
         t_m.update(time.time() - T)
         if i >= iters - 1:
             break
-     
+    model.train()
+    for i, (image, target) in enumerate(data_loader):
+        T = time.time()
+        image = image.squeeze(0).to(device)  # [C, H, W]
+        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+
+        image = image.to(device)
+        target = {k: v.to(device) for k, v in target.items()}
+
+        S = time.time()
+        losses = model(image, target)
+        total_loss = sum(losses.values())
+        val_loss += total_loss
+
+        m_m.update(time.time() - S)
+        
+        prediction = {target["image_id"].item(): {k: v.cpu() for k, v in output.items()}}
+        coco_results.extend(prepare_for_coco(prediction))
+
+        t_m.update(time.time() - T)
+        if i >= iters - 1:
+            break
+
+
     A = time.time() - A 
-    print("iter: {:.1f}, total: {:.1f}, model: {:.1f}".format(1000*A/iters,1000*t_m.avg,1000*m_m.avg))
+    #print("iter: {:.1f}, total: {:.1f}, model: {:.1f}".format(1000*A/iters,1000*t_m.avg,1000*m_m.avg))
     torch.save(coco_results, args.results)
         
-    return A / iters
+    return A / iters , val_loss/iters
     
 
