@@ -34,7 +34,10 @@ def main(args):
     val_size = int(total_len * val_ratio)
     test_size = total_len - train_size - val_size  # Let test_size be the rest
 
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+    # Perform the splits
+    train_dataset = torch.utils.data.Subset(dataset, range(0, train_size))
+    val_dataset = torch.utils.data.Subset(dataset, range(train_size, train_size + val_size))
+    test_dataset = torch.utils.data.Subset(dataset, range(train_size + val_size, total_len))
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=0,drop_last=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=0,drop_last=True)
@@ -87,13 +90,13 @@ def main(args):
         
         B = time.time()
 
-        #eval_output, iter_eval = pmr.evaluate(model, val_dataset.dataset, device, args)
+        eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args)
+        print(eval_output.get_AP())
         #pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
         B = time.time() - B
     
         trained_epoch = epoch + 1
         print("training: {:.1f} s, evaluation: {:.1f} s".format(A, B))
-        #pmr.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
 
     # -------------------------------------------------------------------------- #
 

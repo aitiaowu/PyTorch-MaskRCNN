@@ -30,12 +30,16 @@ def main(args):
     val_size = int(total_len * val_ratio)
     test_size = total_len - train_size - val_size  # Let test_size be the rest
 
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+    # Perform the splits
+    train_dataset = torch.utils.data.Subset(dataset, range(0, train_size))
+    val_dataset = torch.utils.data.Subset(dataset, range(train_size, train_size + val_size))
+    test_dataset = torch.utils.data.Subset(dataset, range(train_size + val_size, total_len))
 
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=0,drop_last=True,shuffle=False)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=0,drop_last=True,shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=0, drop_last=True,shuffle=False)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=0,drop_last=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=0,drop_last=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=0, drop_last=True)
+    
     device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
     cuda = device.type == "cuda"
 
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument("--dataset", default="voc")
     parser.add_argument("--data-dir", default="/content/DATA")
-    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_4_499-31654.pth")
+    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_8_5499-72310.pth")
     parser.add_argument("--iters", type=int, default=14) # number of iterations, minus means the entire dataset
     args = parser.parse_args([]) # [] is needed if you're using Jupyter Notebook.
 

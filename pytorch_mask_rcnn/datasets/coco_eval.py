@@ -1,7 +1,7 @@
 import copy
 import torch
 import numpy as np
-
+from PIL import Image
 import pycocotools.mask as mask_util
 from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
@@ -64,6 +64,7 @@ def prepare_for_coco(predictions):
         labels = prediction["labels"].tolist()
 
         masks = masks > 0.5
+
         rles = [
             mask_util.encode(np.array(mask[:, :, np.newaxis], dtype=np.uint8, order="F"))[0]
             for mask in masks

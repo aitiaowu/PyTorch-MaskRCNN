@@ -5,6 +5,7 @@ import torch
 import random
 from .generalized_dataset import GeneralizedDataset
 from skimage.transform import resize  
+import cv2
 
 def my_collate_fn(batch):
     batch = list(filter(lambda x: x is not None, batch))
@@ -73,8 +74,7 @@ class COCODataset(GeneralizedDataset):
               boxes.append(ann['bbox'] )    
               mask = self.coco.annToMask(ann)
               # Resize the mask
-              mask = resize(mask, (720, 1280))
-
+              mask = cv2.resize(mask, (1280, 720), interpolation=cv2.INTER_NEAREST)
               mask = torch.tensor(mask, dtype=torch.uint8)
               masks.append(mask)
         

@@ -1,7 +1,8 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-
+import numpy as np
+from PIL import Image
 from .pooler import RoIAlign
 from .utils import Matcher, BalancedPositiveNegativeSampler, roi_align
 from .box_ops import BoxCoder, box_iou, process_box, nms
@@ -26,15 +27,28 @@ def fastrcnn_loss(class_logit, box_regression, label, regression_target):
 
 
 def maskrcnn_loss(mask_logit, proposal, matched_idx, label, gt_mask):
+
     matched_idx = matched_idx[:, None].to(proposal)
     roi = torch.cat((matched_idx, proposal), dim=1)
-            
+    #print(roi.shape)       
     M = mask_logit.shape[-1]
     gt_mask = gt_mask[:, None].to(roi)
+    #print(gt_mask.shape)
+    
     mask_target = roi_align(gt_mask, roi, 1., M, M, -1)[:, 0]
+    #print(mask_target.shape)
+    
+    #     # 存储掩码
+    # mask_path = f"/content/sample_data/mask_gt.png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
+    # mask1 = gt_mask.squeeze(0).squeeze(0).cpu().numpy()  # 将张量转换为NumPy数组
+    # mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
+    # mask1 = Image.fromarray(mask1)  # 创建PIL图像对象
+    # mask1.save(mask_path)  # 保存掩码
 
     idx = torch.arange(label.shape[0], device=label.device)
     mask_loss = F.binary_cross_entropy_with_logits(mask_logit[idx, label], mask_target)
+    #print(mask_loss.item())
+    
     return mask_loss
     
 
@@ -169,6 +183,7 @@ class RoIHeads(nn.Module):
                 gt_mask = target['masks']
                 mask_loss = maskrcnn_loss(mask_logit, mask_proposal, pos_matched_idx, mask_label, gt_mask)
                 losses.update(dict(roi_mask_loss=mask_loss))
+                #print(losses)
             else:
                 label = result['labels']
                 idx = torch.arange(label.shape[0], device=label.device)

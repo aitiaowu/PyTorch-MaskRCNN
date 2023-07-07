@@ -184,6 +184,7 @@ class MaskRCNNPredictor(nn.Sequential):
             dim_reduced (int)
             num_classes (int)
         """
+        #print(in_channels,layers,dim_reduced,num_classes)
         
         d = OrderedDict()
         next_feature = in_channels
