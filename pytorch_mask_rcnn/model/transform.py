@@ -46,6 +46,8 @@ class Transformer:
         target['boxes'] = box
         
         if 'masks' in target:
+            #print('in transform:', target['masks'].shape)
+            
             mask = target['masks']
             mask = F.interpolate(mask[None].float(), size=size)[0].byte()
             target['masks'] = mask

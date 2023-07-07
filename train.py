@@ -7,6 +7,7 @@ import random
 import torch
 from torch.utils.data import random_split
 import pytorch_mask_rcnn as pmr
+
 #from coco_Dataset import AgriRobotDataset
 #from pytorch_mask_rcnn.datasets.coco_dataset import my_collate_fn
     
@@ -90,7 +91,7 @@ def main(args):
         
         B = time.time()
 
-        eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args)
+        eval_output, iter_eval = pmr.evaluate(model, dataset, device, args)
         print(eval_output.get_AP())
         #pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
         B = time.time() - B

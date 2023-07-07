@@ -3,6 +3,7 @@ import colorsys
 import numpy as np
 from enum import Enum, unique
 import cv2
+from PIL import Image
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mplc
@@ -213,8 +214,18 @@ class Visualizer:
             boxes = np.asarray(boxes.cpu())
             num_instances = len(boxes)
         if masks is not None:
+            
+
             if masks.is_floating_point():
                 masks = masks > 0.5
+                # mask_path = f"/content/sample_data/mask_vis.png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
+                # mask1 = masks.squeeze(0).cpu().numpy()
+                # mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
+                # #print(mask1.shape)  # 将张量转换为NumPy数组
+                # #a
+                # mask1 = Image.fromarray(mask1)  # 创建PIL图像对象
+                # mask1.save(mask_path)  # 保存掩码
+                # a
             m = np.asarray(masks.cpu())
             masks = [GenericMask(x, self.output.height, self.output.width) for x in m]
             if num_instances:
@@ -249,6 +260,7 @@ class Visualizer:
                 self.draw_box(boxes[i], edge_color=color)
 
             if masks is not None:
+
                 for segment in masks[i].polygons:
                     self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
 

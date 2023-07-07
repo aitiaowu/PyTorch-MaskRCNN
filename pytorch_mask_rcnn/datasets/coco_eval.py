@@ -26,9 +26,22 @@ class CocoEvaluator:
             return
         
         image_ids = list(set([res["image_id"] for res in coco_results]))
+
+        # #mask = list(set([res["segmentation"] for res in coco_results]))
+        # rle=coco_results[0]['segmentation']
+        # decoded_mask = mask_util.decode(rle)
+        # mask1 = decoded_mask
+        # mask1 = (mask1 * 255).astype(np.uint8)
+        # #print(mask1.shape,mask1.dtype)
+        # mask1 = Image.fromarray(mask1)
+        # mask_path = f"/content/sample_data/mask_beforeeval.png"
+        # mask1.save(mask_path)
+        
+
         for iou_type in self.iou_types:
             coco_eval = self.coco_eval[iou_type]
             coco_eval.cocoDt = self.coco_gt.loadRes(coco_results) # use the method loadRes
+            #print(iou_type, dir(coco_eval.cocoDt))
             coco_eval.params.imgIds = image_ids # ids of images to be evaluated
             coco_eval.evaluate() # 15.4s
             coco_eval._paramsEval = copy.deepcopy(coco_eval.params)
@@ -48,10 +61,12 @@ class CocoEvaluator:
             
 def prepare_for_coco(predictions):
     coco_results = []
+
     for original_id, prediction in predictions.items():
         if len(prediction) == 0:
             continue
-
+        #print(prediction,prediction['masks'],prediction['masks'].shape,prediction['masks'].dtype)
+        
         boxes = prediction["boxes"]
         scores = prediction["scores"]
         labels = prediction["labels"]
@@ -64,6 +79,14 @@ def prepare_for_coco(predictions):
         labels = prediction["labels"].tolist()
 
         masks = masks > 0.5
+        
+        # for j in range(masks.shape[0]):
+        #     mask1 = masks[j].cpu().numpy()
+        #     mask1 = (mask1 * 255).astype(np.uint8)
+        #     #print(mask1.shape,mask1.dtype)
+        #     mask1 = Image.fromarray(mask1)
+        #     mask_path = f"/content/sample_data/mask_score_{j}.png"
+        #     mask1.save(mask_path)
 
         rles = [
             mask_util.encode(np.array(mask[:, :, np.newaxis], dtype=np.uint8, order="F"))[0]
@@ -71,6 +94,14 @@ def prepare_for_coco(predictions):
         ]
         for rle in rles:
             rle["counts"] = rle["counts"].decode("utf-8")
+
+        # decoded_mask = mask_util.decode(rle)
+        # mask1 = decoded_mask
+        # mask1 = (mask1 * 255).astype(np.uint8)
+        # #print(mask1.shape,mask1.dtype)
+        # mask1 = Image.fromarray(mask1)
+        # mask_path = f"/content/sample_data/mask_decoded_{original_id}.png"
+        # mask1.save(mask_path)
 
         coco_results.extend(
             [
@@ -87,79 +118,79 @@ def prepare_for_coco(predictions):
     return coco_results    
 
 
-    '''
-    def prepare(self, predictions, iou_type):
-        if iou_type == "bbox":
-            return self.prepare_for_coco_detection(predictions)
-        elif iou_type == "segm":
-            return self.prepare_for_coco_segmentation(predictions)
-        else:
-            raise ValueError("Unknown iou type {}".format(iou_type))
-            
-    def prepare_for_coco_detection(self, predictions):
-        coco_results = []
-        for image_id, prediction in predictions.items():
-            if len(prediction) == 0:
-                continue
-
-            # convert to coco bbox format: xmin, ymin, w, h
-            boxes = prediction["boxes"]
-            x1, y1, x2, y2 = boxes.unbind(1)
-            boxes = torch.stack((x1, y1, x2 - x1, y2 - y1), dim=1)
-            
-            boxes = boxes.tolist()
-            
-            scores = prediction["scores"].tolist()
-            labels = prediction["labels"].tolist()
-            labels = [self.ann_labels[l] for l in labels]
-
-            coco_results.extend(
-                [
-                    {
-                        "image_id": image_id,
-                        "category_id": labels[k],
-                        "bbox": box,
-                        "score": scores[k],
-                    }
-                    for k, box in enumerate(boxes)
-                ]
-            )
-        return coco_results
     
-    def prepare_for_coco_segmentation(self, predictions):
-        coco_results = []
-        for original_id, prediction in predictions.items():
-            if len(prediction) == 0:
-                continue
+    # def prepare(self, predictions, iou_type):
+    #     if iou_type == "bbox":
+    #         return self.prepare_for_coco_detection(predictions)
+    #     elif iou_type == "segm":
+    #         return self.prepare_for_coco_segmentation(predictions)
+    #     else:
+    #         raise ValueError("Unknown iou type {}".format(iou_type))
+            
+    # def prepare_for_coco_detection(self, predictions):
+    #     coco_results = []
+    #     for image_id, prediction in predictions.items():
+    #         if len(prediction) == 0:
+    #             continue
 
-            scores = prediction["scores"]
-            labels = prediction["labels"]
-            masks = prediction["masks"]
+    #         # convert to coco bbox format: xmin, ymin, w, h
+    #         boxes = prediction["boxes"]
+    #         x1, y1, x2, y2 = boxes.unbind(1)
+    #         boxes = torch.stack((x1, y1, x2 - x1, y2 - y1), dim=1)
+            
+    #         boxes = boxes.tolist()
+            
+    #         scores = prediction["scores"].tolist()
+    #         labels = prediction["labels"].tolist()
+    #         labels = [self.ann_labels[l] for l in labels]
 
-            masks = masks > 0.5
+    #         coco_results.extend(
+    #             [
+    #                 {
+    #                     "image_id": image_id,
+    #                     "category_id": labels[k],
+    #                     "bbox": box,
+    #                     "score": scores[k],
+    #                 }
+    #                 for k, box in enumerate(boxes)
+    #             ]
+    #         )
+    #     return coco_results
+    
+    # def prepare_for_coco_segmentation(self, predictions):
+    #     coco_results = []
+    #     for original_id, prediction in predictions.items():
+    #         if len(prediction) == 0:
+    #             continue
 
-            scores = prediction["scores"].tolist()
-            labels = prediction["labels"].tolist()
-            labels = [self.ann_labels[l] for l in labels]
+    #         scores = prediction["scores"]
+    #         labels = prediction["labels"]
+    #         masks = prediction["masks"]
 
-            rles = [
-                mask_util.encode(np.array(mask[:, :, np.newaxis], dtype=np.uint8, order="F"))[0]
-                for mask in masks
-            ]
-            for rle in rles:
-                rle["counts"] = rle["counts"].decode("utf-8")
+    #         masks = masks > 0.5
 
-            coco_results.extend(
-                [
-                    {
-                        "image_id": original_id,
-                        "category_id": labels[k],
-                        "segmentation": rle,
-                        "score": scores[k],
-                    }
-                    for k, rle in enumerate(rles)
-                ]
-            )
-        return coco_results
-    '''
+    #         scores = prediction["scores"].tolist()
+    #         labels = prediction["labels"].tolist()
+    #         labels = [self.ann_labels[l] for l in labels]
+
+    #         rles = [
+    #             mask_util.encode(np.array(mask[:, :, np.newaxis], dtype=np.uint8, order="F"))[0]
+    #             for mask in masks
+    #         ]
+    #         for rle in rles:
+    #             rle["counts"] = rle["counts"].decode("utf-8")
+
+    #         coco_results.extend(
+    #             [
+    #                 {
+    #                     "image_id": original_id,
+    #                     "category_id": labels[k],
+    #                     "segmentation": rle,
+    #                     "score": scores[k],
+    #                 }
+    #                 for k, rle in enumerate(rles)
+    #             ]
+    #         )
+    #     return coco_results
+    
     

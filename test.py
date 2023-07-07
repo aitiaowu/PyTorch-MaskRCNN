@@ -35,9 +35,9 @@ def main(args):
     val_dataset = torch.utils.data.Subset(dataset, range(train_size, train_size + val_size))
     test_dataset = torch.utils.data.Subset(dataset, range(train_size + val_size, total_len))
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=0,drop_last=True,shuffle=False)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=0,drop_last=True,shuffle=False)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=0, drop_last=True,shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=0,drop_last=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=0,drop_last=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=0, drop_last=True)
 
     
     device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
@@ -63,10 +63,10 @@ def main(args):
 
     print(eval_output.get_AP())
 
-    '''
+    
     iters = 3
 
-    for i, (image, target) in enumerate(val_loader):
+    for i, (image, target) in enumerate(train_loader):
         image = image.to(device)[0]
         #target = {k: v.to(device) for k, v in target.items()}
 
@@ -74,17 +74,17 @@ def main(args):
             result = model(image)
         print(image.shape)
 
-        pmr.show(image, result, max(dataset.classes), "./images/output{}.jpg".format(i))
+        pmr.show(image, result, dataset.classes, "/content/sample_data/{}.jpg".format(i))
 
         if i >= iters - 1:
             break
-      '''
+      
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument("--dataset", default="voc")
     parser.add_argument("--data-dir", default="/content/DATA")
     parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_8_5499-72310.pth")
-    parser.add_argument("--iters", type=int, default=14) # number of iterations, minus means the entire dataset
+    parser.add_argument("--iters", type=int, default=1) # number of iterations, minus means the entire dataset
     args = parser.parse_args([]) # [] is needed if you're using Jupyter Notebook.
 
     args.use_cuda = True

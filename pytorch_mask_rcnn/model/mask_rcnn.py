@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.model_zoo import load_url
 from torchvision import models
 from torchvision.ops import misc
-
+from .CBAM import CBAM
 from .utils import AnchorGenerator
 from .rpn import RPNHead, RegionProposalNetwork
 from .pooler import RoIAlign
@@ -154,6 +154,8 @@ class MaskRCNN(nn.Module):
             return dict(**rpn_losses, **roi_losses)
         else:
             result = self.transformer.postprocess(result, image_shape, ori_image_shape)
+            #print(result)
+            
             return result
         
         
@@ -216,7 +218,8 @@ class ResBackbone(nn.Module):
         self.body = nn.ModuleDict(d for i, d in enumerate(body.named_children()) if i < 8)
         in_channels = 2048
         self.out_channels = 256
-        
+        #self.cbam = CBAM(256) 
+
         self.inner_block_module = nn.Conv2d(in_channels, self.out_channels, 1)
         self.layer_block_module = nn.Conv2d(self.out_channels, self.out_channels, 3, 1, 1)
         
@@ -230,6 +233,7 @@ class ResBackbone(nn.Module):
             x = module(x)
         x = self.inner_block_module(x)
         x = self.layer_block_module(x)
+        #x = self.cbam(x)
         return x
 
     
