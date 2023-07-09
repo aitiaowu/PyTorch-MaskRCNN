@@ -262,7 +262,11 @@ class Visualizer:
             if masks is not None:
 
                 for segment in masks[i].polygons:
-                    self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
+                    try:
+                        self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
+                        print('Has segmentation:')
+                    except AttributeError:
+                        pass
 
             if labels is not None:
                 # first get a box

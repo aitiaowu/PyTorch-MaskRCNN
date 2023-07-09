@@ -199,15 +199,16 @@ def Genrate(model, data_loader, device, args):
         T = time.time()
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-
-        #             # 存储掩码
-        # mask_path = f"/content/sample_data/mask_gt{i}.png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
-        # mask1 = target['masks'].squeeze(0).cpu().numpy()
-        # mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
-        # #print(mask1.shape)  # 将张量转换为NumPy数组
-        # #a
-        # mask1 = Image.fromarray(mask1)  # 创建PIL图像对象
-        # mask1.save(mask_path)  # 保存掩码
+        imgid = target['image_id']
+        
+                    # 存储掩码
+        mask_path = "/content/drive/MyDrive/Study/Thesis/data/mask_gt_"+ imgid + ".png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
+        mask1 = target['masks'].squeeze(0).cpu().numpy()
+        mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
+        #print(mask1.shape)  # 将张量转换为NumPy数组
+        #a
+        mask1 = Image.fromarray(mask1)  # 创建PIL图像对象
+        mask1.save(mask_path)  # 保存掩码
         
         ####
         image = image.to(device)
@@ -235,3 +236,7 @@ def Genrate(model, data_loader, device, args):
     torch.save(coco_results, args.results)
         
     return A / iters
+
+
+
+

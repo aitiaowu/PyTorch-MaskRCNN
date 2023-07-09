@@ -52,6 +52,13 @@ class COCODataset(GeneralizedDataset):
     def get_target(self, img_id):
         img_id = int(img_id)
         ann_ids = self.coco.getAnnIds(img_id)
+        img_id = int(img_id)
+        img_info = self.coco.imgs[img_id]
+        image = Image.open(os.path.join(self.data_dir, "images", img_info["file_name"])).convert('RGB')
+        original_width = image.size[0]
+        original_height = image.size[1]
+        print(original_width,original_height)
+        image = self.image_transform(image) 
         anns = self.coco.loadAnns(ann_ids)
         boxes = []
         labels = []
@@ -82,6 +89,9 @@ class COCODataset(GeneralizedDataset):
             return None
         
         boxes = torch.tensor(boxes, dtype=torch.float32)
+        scale_x = 1280 / original_width
+        scale_y = 720 / original_height
+        boxes = torch.tensor(boxes, dtype=torch.float32) * torch.tensor([scale_x, scale_y, scale_x, scale_y])
         boxes = self.convert_to_xyxy(boxes)
         labels = torch.tensor(labels[0])
         masks = torch.stack(masks)

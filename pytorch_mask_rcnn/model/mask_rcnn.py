@@ -218,7 +218,7 @@ class ResBackbone(nn.Module):
         self.body = nn.ModuleDict(d for i, d in enumerate(body.named_children()) if i < 8)
         in_channels = 2048
         self.out_channels = 256
-        #self.cbam = CBAM(256) 
+        #self.cbam = CBAM(self.out_channels)
 
         self.inner_block_module = nn.Conv2d(in_channels, self.out_channels, 1)
         self.layer_block_module = nn.Conv2d(self.out_channels, self.out_channels, 3, 1, 1)
@@ -272,7 +272,14 @@ def maskrcnn_resnet50(pretrained, num_classes, pretrained_backbone=True):
             if i in skip_list:
                 continue
             msd[name].copy_(pretrained_msd[i])
-            
+        # for i, name in enumerate(msd):
+        #     #print(name)
+        #     if name == 'backbone.cbam.ca.fc1.weight' or 'backbone.cbam.ca.fc2.weight':
+        #         continue
+        #     if i in skip_list:
+        #         continue
+        #     msd[name].copy_(pretrained_msd[i])
+                        
         model.load_state_dict(msd)
     
     return model

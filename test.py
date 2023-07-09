@@ -14,6 +14,29 @@ import torch
 from torch.utils.data import random_split
 import pytorch_mask_rcnn as pmr
 
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+def plot_image_and_annotations(image, target):
+    fig, ax = plt.subplots(1)
+    ax.imshow(image)
+    
+    # 画出 bounding boxes
+    for box in target['boxes']:
+        xmin, ymin, xmax, ymax = box
+        rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+                                 linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
+        
+    # 如果你的 target 中包含 masks，你也可以画出 masks：
+    for mask in target['masks']:
+        ax.imshow(mask, alpha=0.5)
+    imgid = target['image_id']
+
+        # 如果你想保存图片，你可以使用 plt.savefig：
+    plt.savefig("/content/drive/MyDrive/Study/Thesis/data/test/gt_"+ str(imgid.item()) + ".png")
+    
+
 
 def main(args):
 
@@ -43,48 +66,58 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
     cuda = device.type == "cuda"
 
-    if cuda: pmr.get_gpu_prop(show=True)
-    print("\ndevice: {}".format(device))
+    # if cuda: pmr.get_gpu_prop(show=True)
+    # print("\ndevice: {}".format(device))
 
-    num_classes = 2
-    model = pmr.maskrcnn_resnet50(False, num_classes).to(device)
+    # num_classes = 2
+    # model = pmr.maskrcnn_resnet50(False, num_classes).to(device)
 
-    checkpoint = torch.load(args.ckpt_path, map_location=device)
-    model.load_state_dict(checkpoint["model"])
-    #print(checkpoint["eval_info"])
-    del checkpoint
-    if cuda: torch.cuda.empty_cache()
+    # checkpoint = torch.load(args.ckpt_path, map_location=device)
+    # model.load_state_dict(checkpoint["model"])
+    # #print(checkpoint["eval_info"])
+    # del checkpoint
+    # if cuda: torch.cuda.empty_cache()
 
-    #print("\nevaluating...\n")
+    # #print("\nevaluating...\n")
 
-    B = time.time()
-    eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
-    B = time.time() - B
+    # B = time.time()
+    # eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
+    # B = time.time() - B
 
-    print(eval_output.get_AP())
+    # print(eval_output.get_AP())
 
     
-    iters = 3
+    # iters = 1000
 
-    for i, (image, target) in enumerate(train_loader):
-        image = image.to(device)[0]
-        #target = {k: v.to(device) for k, v in target.items()}
+    # for i, (image, target) in enumerate(train_loader):
+    #     image = image.to(device)[0]
+    #     #target = {k: v.to(device) for k, v in target.items()}
 
-        with torch.no_grad():
-            result = model(image)
-        print(image.shape)
+    #     with torch.no_grad():
+    #         result = model(image)
+    #     print(image.shape)
 
-        pmr.show(image, result, dataset.classes, "/content/sample_data/{}.jpg".format(i))
+    #     pmr.show(image, result, dataset.classes, "/content/sample_data/{}.jpg".format(i))
 
-        if i >= iters - 1:
-            break
+    #     if i >= iters - 1:
+    #         break
       
+
+
+
+
+    # 使用这个函数
+    for i in range(len(dataset)):
+      image, target = dataset[i]  # 使用你的索引
+      image = image.permute(1, 2, 0).numpy()  # 如果你的图像是 CHW 格式，你需要将它转化为 HWC 格式以便于显示
+      plot_image_and_annotations(image, target)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument("--dataset", default="voc")
     parser.add_argument("--data-dir", default="/content/DATA")
-    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_8_5499-72310.pth")
-    parser.add_argument("--iters", type=int, default=1) # number of iterations, minus means the entire dataset
+    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/baseline_model_38_999-293230.pth")
+    parser.add_argument("--iters", type=int, default=500) # number of iterations, minus means the entire dataset
     args = parser.parse_args([]) # [] is needed if you're using Jupyter Notebook.
 
     args.use_cuda = True
