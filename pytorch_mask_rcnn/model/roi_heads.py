@@ -30,13 +30,27 @@ def maskrcnn_loss(mask_logit, proposal, matched_idx, label, gt_mask):
 
     matched_idx = matched_idx[:, None].to(proposal)
     roi = torch.cat((matched_idx, proposal), dim=1)
-    #print(roi.shape)       
+    print(roi)       
     M = mask_logit.shape[-1]
+    #print(M)
     gt_mask = gt_mask[:, None].to(roi)
-    #print(gt_mask.shape)
     
+    image_height, image_width = 562, 1000  # 需要替换为实际值
+
+    # 保留索引
+    index = roi[:, 0]
+
+    # 对ROI的坐标进行调整
+    roi[:, 1] = torch.clamp(roi[:, 1], min=0, max=image_width)
+    roi[:, 2] = torch.clamp(roi[:, 2], min=0, max=image_height)
+    roi[:, 3] = torch.clamp(roi[:, 3], min=0, max=image_width)
+    roi[:, 4] = torch.clamp(roi[:, 4], min=0, max=image_height)
+
+    # 还原索引
+    roi[:, 0] = index
+
     mask_target = roi_align(gt_mask, roi, 1., M, M, -1)[:, 0]
-    #print(mask_target.shape)
+    
     
     #     # 存储掩码
     # mask_path = f"/content/sample_data/mask_gt.png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
@@ -84,9 +98,11 @@ class RoIHeads(nn.Module):
     def select_training_samples(self, proposal, target):
         gt_box = target['boxes']
         gt_label = target['labels']
-        #print('gt_label:',gt_label)
-        
-        proposal = torch.cat((proposal, gt_box))
+        # print('gt_label:',gt_label.shape, gt_label)
+        # print('gt:',gt_box.shape)
+        # print('proposal',proposal.shape)
+
+        # proposal = torch.cat((proposal, gt_box))
         
         iou = box_iou(gt_box, proposal)
         pos_neg_label, matched_idx = self.proposal_matcher(iou)
@@ -95,13 +111,19 @@ class RoIHeads(nn.Module):
         
         regression_target = self.box_coder.encode(gt_box[matched_idx[pos_idx]], proposal[pos_idx])
         proposal = proposal[idx]
+
+        #print(proposal.shape)
+        #print(matched_idx)
         matched_idx = matched_idx[idx]
+        
         label = gt_label[matched_idx]
         num_pos = pos_idx.shape[0]
         label[num_pos:] = 0
 
-        #print("Unique_labels_0:", torch.unique(label))
-        #print("Unique_matched_idx:", torch.unique(matched_idx))
+        # print("pos_idx size:", pos_idx.shape)
+        # print("neg_idx size:", neg_idx.shape)
+        # print("Unique_labels_0:", torch.unique(label))
+        # print("Unique_matched_idx:", torch.unique(matched_idx))
 
 
         return proposal, matched_idx, label, regression_target
@@ -158,6 +180,7 @@ class RoIHeads(nn.Module):
                 pos_matched_idx = matched_idx[:num_pos]
                 mask_label = label[:num_pos]
                 
+
                 '''
                 # -------------- critial ----------------
                 box_regression = box_regression[:num_pos].reshape(num_pos, -1, 4)
@@ -175,7 +198,8 @@ class RoIHeads(nn.Module):
                 if mask_proposal.shape[0] == 0:
                     result.update(dict(masks=torch.empty((0, 28, 28))))
                     return result, losses
-                
+   
+            
             mask_feature = self.mask_roi_pool(feature, mask_proposal, image_shape)
             mask_logit = self.mask_predictor(mask_feature)
             

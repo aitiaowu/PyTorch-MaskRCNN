@@ -48,8 +48,12 @@ class RoIAlign:
             output (Tensor[K, C, self.output_size[0], self.output_size[1]])
         
         """
+        #print('proposal:',proposal)
+        #print('image shape:', image_shape)
         idx = proposal.new_full((proposal.shape[0], 1), 0)
         roi = torch.cat((idx, proposal), dim=1)
-        
         self.setup_scale(feature.shape[-2:], image_shape)
+
+ 
+
         return roi_align(feature.to(roi), roi, self.spatial_scale, self.output_size[0], self.output_size[1], self.sampling_ratio)

@@ -18,7 +18,7 @@ class Matcher:
             -1 means ignoring this box.
             matched_idx (Tensor[N]): indices of gt box matched by each predicted box.
         """
-        
+        #print(iou)
         value, matched_idx = iou.max(dim=0)
         label = torch.full((iou.shape[1],), -1, dtype=torch.float, device=iou.device) 
         
@@ -58,6 +58,8 @@ class BalancedPositiveNegativeSampler:
     
 def roi_align(features, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio):
     if torch.__version__ >= "1.5.0":
+
+        #print(features.shape, rois.shape, spatial_scale, pooled_height, pooled_width, sampling_ratio.shape)
         return torch.ops.torchvision.roi_align(
             features, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, False)
     else:

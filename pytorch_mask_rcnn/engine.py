@@ -34,6 +34,9 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
         num_iters = epoch * iters + i
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+        target['boxes'] = target['boxes'].squeeze(0)
+        target['labels'] = target['labels'].squeeze(0)
+        #print(target['boxes'].shape)
 
         if num_iters <= args.warmup_iters:
             r = num_iters / args.warmup_iters
@@ -140,6 +143,8 @@ def generate_results(model, data_loader, device, args):
         T = time.time()
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+        target['boxes'] = target['boxes'].squeeze(0)
+        target['labels'] = target['labels'].squeeze(0)
 
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
@@ -161,7 +166,8 @@ def generate_results(model, data_loader, device, args):
         T = time.time()
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-
+        target['boxes'] = target['boxes'].squeeze(0)
+        target['labels'] = target['labels'].squeeze(0)
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
 
@@ -199,16 +205,18 @@ def Genrate(model, data_loader, device, args):
         T = time.time()
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-        imgid = target['image_id']
-        
-                    # 存储掩码
-        mask_path = "/content/drive/MyDrive/Study/Thesis/data/mask_gt_"+ imgid + ".png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
-        mask1 = target['masks'].squeeze(0).cpu().numpy()
-        mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
-        #print(mask1.shape)  # 将张量转换为NumPy数组
-        #a
-        mask1 = Image.fromarray(mask1)  # 创建PIL图像对象
-        mask1.save(mask_path)  # 保存掩码
+        target['boxes'] = target['boxes'].squeeze(0)
+        target['labels'] = target['labels'].squeeze(0)
+
+        #imgid = target['image_id']
+        #             # 存储掩码
+        # mask_path = "/content/drive/MyDrive/Study/Thesis/data/mask_gt_"+ imgid + ".png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
+        # mask1 = target['masks'].squeeze(0).cpu().numpy()
+        # mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
+        # #print(mask1.shape)  # 将张量转换为NumPy数组
+        # #a
+        # mask1 = Image.fromarray(mask1)  # 创建PIL图像对象
+        # mask1.save(mask_path)  # 保存掩码
         
         ####
         image = image.to(device)

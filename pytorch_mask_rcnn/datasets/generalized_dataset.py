@@ -71,7 +71,6 @@ class GeneralizedDataset:
             boxes = target["boxes"]
             labels = target["labels"]
             masks = target["masks"]
-
             try:
                 assert len(boxes) > 0, "{}: len(boxes) = 0".format(i)
                 assert len(boxes) == len(labels), "{}: len(boxes) != len(labels)".format(i)

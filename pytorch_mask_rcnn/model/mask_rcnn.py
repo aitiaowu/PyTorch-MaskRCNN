@@ -134,7 +134,7 @@ class MaskRCNN(nn.Module):
         
         #------------ Transformer --------------------------
         self.transformer = Transformer(
-            min_size=720, max_size=1280, 
+            min_size=562, max_size=1000, 
             image_mean=[0.485, 0.456, 0.406], 
             image_std=[0.229, 0.224, 0.225])
         
@@ -142,6 +142,9 @@ class MaskRCNN(nn.Module):
         ori_image_shape = image.shape[-2:]
         
         image, target = self.transformer(image, target)
+        #print('img:',image.shape)
+        #print(target['boxes'])
+        
         image_shape = image.shape[-2:]
         feature = self.backbone(image)
         
@@ -268,10 +271,13 @@ def maskrcnn_resnet50(pretrained, num_classes, pretrained_backbone=True):
         skip_list = [271, 272, 273, 274, 279, 280, 281, 282, 293, 294]
         if num_classes == 91:
             skip_list = [271, 272, 273, 274]
+            
         for i, name in enumerate(msd):
             if i in skip_list:
                 continue
             msd[name].copy_(pretrained_msd[i])
+
+        #for attention
         # for i, name in enumerate(msd):
         #     #print(name)
         #     if name == 'backbone.cbam.ca.fc1.weight' or 'backbone.cbam.ca.fc2.weight':

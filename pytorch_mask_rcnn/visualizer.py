@@ -218,6 +218,7 @@ class Visualizer:
 
             if masks.is_floating_point():
                 masks = masks > 0.5
+                #save the prediction
                 # mask_path = f"/content/sample_data/mask_vis.png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
                 # mask1 = masks.squeeze(0).cpu().numpy()
                 # mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
@@ -264,7 +265,7 @@ class Visualizer:
                 for segment in masks[i].polygons:
                     try:
                         self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
-                        print('Has segmentation:')
+                        #print('Has segmentation:')
                     except AttributeError:
                         pass
 
