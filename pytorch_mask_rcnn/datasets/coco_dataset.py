@@ -23,7 +23,7 @@ class COCODataset(GeneralizedDataset):
         self.train = train
         
         ann_file = os.path.join("/content/drive/MyDrive/Study/Thesis/data/annotations_v1.json")
-        #ann_file = os.path.join(data_dir, "annotations.json")
+        ann_file = os.path.join(data_dir, "annotations.json")
         self.coco = COCO(ann_file)
         self.ids = [str(k) for k in self.coco.imgs]
         
@@ -79,15 +79,15 @@ class COCODataset(GeneralizedDataset):
               if label != 1 or label == 5 or label == 6 :  # change this list to your own valid category ids
                 continue
 
-              if num_instances <= 0 or num_instances >= 5:  # adjust this condition according to your need
+              if num_instances <= 0 or num_instances >= 2:  # adjust this condition according to your need
                 continue
 
-              if any(np.isnan(coord) for box in ann['bbox'] for coord in box):
-                    continue
+              # if any(np.isnan(coord) for box in ann['bbox'] for coord in box):
+              #       continue
                     
               # Repeat adding the label based on num_instances
-              for _ in range(num_instances):
-                  labels.append(ann["category_id"])
+
+              labels.append(ann["category_id"])
               boxes.append(ann['bbox'])    
               mask = self.coco.annToMask(ann)
               # Resize the mask
@@ -100,16 +100,10 @@ class COCODataset(GeneralizedDataset):
         #print(labels)
         boxes = torch.tensor(boxes, dtype=torch.float32)
         boxes = self.convert_to_xyxy(boxes)
-        labels = torch.tensor(labels)
+        labels = torch.tensor(labels[0])
         #print(labels.shape)
         masks = torch.stack(masks)
-        target = dict(image_id=torch.tensor([img_id]), boxes=boxes.squeeze(2), labels=labels, masks=masks)
-        #print(target['boxes'])
-        #print(bianhao)
-        #print('img_id:', bianhao, 'label:', labels, 'data_id:',img_id)
-        #aaa
+        target = dict(image_id=torch.tensor([img_id]), boxes=boxes, labels=labels, masks=masks)
+
+
         return target
-
-
-    
-    

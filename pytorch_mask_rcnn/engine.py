@@ -15,6 +15,27 @@ from torch.utils.tensorboard import SummaryWriter
 
 writer = SummaryWriter()
 
+def plot_image_and_annotations(image, target):
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    fig, ax = plt.subplots(1)
+    ax.imshow(image)
+
+    # 画出 bounding boxes
+    for box in target['boxes']:
+        xmin, ymin, xmax, ymax = box
+        rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+                                 linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
+        
+    # 如果你的 target 中包含 masks，你也可以画出 masks：
+    for mask in target['masks']:
+        ax.imshow(mask, alpha=0.5)
+    imgid = target['image_id']
+
+        # 如果你想保存图片，你可以使用 plt.savefig：
+    plt.savefig("/content/sample_data"+ str(imgid.item()) + ".png")
+
 def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, args):
     for p in optimizer.param_groups:
         p["lr"] = args.lr_epoch
@@ -32,18 +53,19 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
         num_iters = epoch * iters + i
-        image = image.squeeze(0).to(device)  # [C, H, W]
-        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-        target['boxes'] = target['boxes'].squeeze(0)
-        target['labels'] = target['labels'].squeeze(0)
-        #print(target['boxes'].shape)
-
         if num_iters <= args.warmup_iters:
             r = num_iters / args.warmup_iters
             for j, p in enumerate(optimizer.param_groups):
-                p["lr"] = r * args.lr_epoch
-        
-                   
+                p["lr"] = 5 * r * args.lr_epoch
+
+        # target['masks'] = target['masks'].squeeze(0)
+        # target['boxes'] = target['boxes'].squeeze(0)
+        # image = image.squeeze(0).permute(1, 2, 0).numpy()
+        # plot_image_and_annotations(image, target)
+        # a
+        image = image.squeeze(0).to(device)  # [C, H, W]
+        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]  
+
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
 
@@ -51,7 +73,11 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
         #print(image.shape,target['masks'].shape,target['boxes'].shape)
 
         losses = model(image, target)
-        
+
+        ca_weights = model.backbone.body.layer3.cbam.ca_weights.detach().cpu().numpy()
+        sa_weights = model.backbone.body.layer3.cbam.sa_weights.detach().cpu().numpy()
+        np.save(f'/content/sample_data/ca_weights_{i}.npy', ca_weights)
+        np.save(f'/content/sample_data/sa_weights_{i}.npy', sa_weights)
 
         total_loss = sum(losses.values())
         #total_loss = sum(losses.values())/accum_iter
@@ -76,7 +102,7 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
           print('val_loss',val_loss.item())
           if val_loss < min_val_loss:
                 min_val_loss = val_loss
-                model_path = f"/content/drive/MyDrive/Study/Thesis/checkpoints/model" + f'_{epoch}_{i}.pth'
+                model_path = f"/content/drive/MyDrive/Study/Thesis/checkpoints/model" + str(epoch) + '.pth'
                 
                 if best_model_path is not None and os.path.exists(best_model_path):
                     os.remove(best_model_path)
@@ -141,10 +167,9 @@ def generate_results(model, data_loader, device, args):
     A = time.time()
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
+
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-        target['boxes'] = target['boxes'].squeeze(0)
-        target['labels'] = target['labels'].squeeze(0)
 
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
@@ -156,6 +181,7 @@ def generate_results(model, data_loader, device, args):
         m_m.update(time.time() - S)
         
         prediction = {target["image_id"].item(): {k: v.cpu() for k, v in output.items()}}
+
         coco_results.extend(prepare_for_coco(prediction))
 
         t_m.update(time.time() - T)
@@ -164,10 +190,10 @@ def generate_results(model, data_loader, device, args):
     model.train()
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
+
         image = image.squeeze(0).to(device)  # [C, H, W]
-        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-        target['boxes'] = target['boxes'].squeeze(0)
-        target['labels'] = target['labels'].squeeze(0)
+        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]      
+
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
 
@@ -203,14 +229,12 @@ def Genrate(model, data_loader, device, args):
     A = time.time()
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
+
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
-        target['boxes'] = target['boxes'].squeeze(0)
-        target['labels'] = target['labels'].squeeze(0)
-
         #imgid = target['image_id']
         #             # 存储掩码
-        # mask_path = "/content/drive/MyDrive/Study/Thesis/data/mask_gt_"+ imgid + ".png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
+        # mask_path = "/content/sample_data/mask_gt_"+ imgid + ".png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
         # mask1 = target['masks'].squeeze(0).cpu().numpy()
         # mask1 = (mask1 * 255).astype(np.uint8)  # 将像素值从[0, 1]范围映射到[0, 255]范围，并转换为整数类型
         # #print(mask1.shape)  # 将张量转换为NumPy数组
@@ -224,7 +248,8 @@ def Genrate(model, data_loader, device, args):
 
         S = time.time()
         output = model(image)
-        #print('output:',output['masks'],output['masks'].shape,output['masks'].dtype)
+
+
         
         ####test masks prediction####
 
@@ -232,8 +257,10 @@ def Genrate(model, data_loader, device, args):
         m_m.update(time.time() - S)
         
         prediction = {target["image_id"].item(): {k: v.cpu() for k, v in output.items()}}
-        #print(prediction,prediction['masks'],prediction['masks'].shape,prediction['masks'].dtype)
-        #a
+
+        # print("\n prediction shape")
+        # print(prediction[target["image_id"].item()]['boxes'].shape,prediction[target["image_id"].item()]['masks'].shape)
+        
         coco_results.extend(prepare_for_coco(prediction))
 
         t_m.update(time.time() - T)
@@ -244,6 +271,7 @@ def Genrate(model, data_loader, device, args):
     torch.save(coco_results, args.results)
         
     return A / iters
+
 
 
 

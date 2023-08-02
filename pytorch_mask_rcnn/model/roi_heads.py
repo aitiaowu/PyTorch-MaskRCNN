@@ -30,7 +30,7 @@ def maskrcnn_loss(mask_logit, proposal, matched_idx, label, gt_mask):
 
     matched_idx = matched_idx[:, None].to(proposal)
     roi = torch.cat((matched_idx, proposal), dim=1)
-    print(roi)       
+    #print(roi)       
     M = mask_logit.shape[-1]
     #print(M)
     gt_mask = gt_mask[:, None].to(roi)

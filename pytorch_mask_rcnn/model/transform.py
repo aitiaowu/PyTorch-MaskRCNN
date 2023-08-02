@@ -39,7 +39,7 @@ class Transformer:
         if target is None:
             return image, target
         
-        box = target['boxes']
+        box = target['boxes'].squeeze(0)
         
         box[:, [0, 2]] = box[:, [0, 2]] * image.shape[-1] / ori_image_shape[1]
         box[:, [1, 3]] = box[:, [1, 3]] * image.shape[-2] / ori_image_shape[0]

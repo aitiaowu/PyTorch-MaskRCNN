@@ -39,7 +39,7 @@ class TextArea:
             values = [int(v) / 10 for v in values]
             result = {"bbox AP": values[0], "mask AP": values[12]}
             
-        return txt
+        return result
     
     
 class Meter:

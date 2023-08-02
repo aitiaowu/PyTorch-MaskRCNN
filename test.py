@@ -1,4 +1,4 @@
-
+from PIL import Image
 import argparse
 import os
 import time
@@ -63,8 +63,8 @@ def main(args):
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=0, drop_last=True)
 
     
-    device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
-    cuda = device.type == "cuda"
+    # device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
+    # cuda = device.type == "cuda"
 
     # if cuda: pmr.get_gpu_prop(show=True)
     # print("\ndevice: {}".format(device))
@@ -74,7 +74,6 @@ def main(args):
 
     # checkpoint = torch.load(args.ckpt_path, map_location=device)
     # model.load_state_dict(checkpoint["model"])
-    # #print(checkpoint["eval_info"])
     # del checkpoint
     # if cuda: torch.cuda.empty_cache()
 
@@ -84,25 +83,34 @@ def main(args):
     # eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
     # B = time.time() - B
 
-    # print(eval_output.get_AP())
+    # print(eval_output.get_AP(), B)
 
     
-    # iters = 1000
+    # iters = 100
 
     # for i, (image, target) in enumerate(train_loader):
     #     image = image.to(device)[0]
-    #     #target = {k: v.to(device) for k, v in target.items()}
-
+    #     # target = {k: v.to(device) for k, v in target.items()}
+     
     #     with torch.no_grad():
     #         result = model(image)
-    #     print(image.shape)
+    #     #print(image.dtype)  
 
     #     pmr.show(image, result, dataset.classes, "/content/sample_data/{}.jpg".format(i))
 
     #     if i >= iters - 1:
     #         break
       
+    # # 加载保存的注意力权重
+    # ca_weights = np.load('ca_weights_0.npy')
+    # sa_weights = np.load('sa_weights_0.npy')
 
+    # # 生成并显示热图
+    # plt.imshow(ca_weights, cmap='hot', interpolation='nearest')
+    # plt.show()
+
+    # plt.imshow(sa_weights, cmap='hot', interpolation='nearest')
+    # plt.show()
 
 
 
@@ -116,8 +124,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument("--dataset", default="voc")
     parser.add_argument("--data-dir", default="/content/DATA")
-    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/baseline_model_38_999-293230.pth")
-    parser.add_argument("--iters", type=int, default=500) # number of iterations, minus means the entire dataset
+    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_0_3499-6998.pth")
+    parser.add_argument("--iters", type=int, default=1) # number of iterations, minus means the entire dataset
     args = parser.parse_args([]) # [] is needed if you're using Jupyter Notebook.
 
     args.use_cuda = True

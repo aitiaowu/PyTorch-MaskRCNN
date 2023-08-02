@@ -13,6 +13,12 @@ import pytorch_mask_rcnn as pmr
     
     
 def main(args):
+
+    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+
+    os.environ["TORCH_USE_CUDA_DSA"] = "1"
+
+
     device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
     if device.type == "cuda": 
         pmr.get_gpu_prop(show=True)
@@ -93,7 +99,7 @@ def main(args):
 
         eval_output, iter_eval = pmr.evaluate(model, dataset, device, args)
         print(eval_output.get_AP())
-        #pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
+        #pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path)
         B = time.time() - B
     
         trained_epoch = epoch + 1

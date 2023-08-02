@@ -5,6 +5,7 @@ from PIL import Image
 import pycocotools.mask as mask_util
 from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
+import random
 
 
 class CocoEvaluator:
@@ -14,34 +15,37 @@ class CocoEvaluator:
             
         coco_gt = copy.deepcopy(coco_gt)
         self.coco_gt = coco_gt
+        
         self.iou_types = iou_types
         #self.ann_labels = ann_labels
         self.coco_eval = {iou_type: COCOeval(coco_gt, iouType=iou_type)
                          for iou_type in iou_types}
         
         self.has_results = False
+
+        
+        # ann_ids = coco_gt.getAnnIds(imgIds=1)
+        # anns = coco_gt.loadAnns(ann_ids)
+        # for ann in anns:
+        #     bbox = ann['bbox']
+        #     ann['bbox'] = np.array(ann['bbox'])
+        #     ann['bbox'] = ann['bbox'].squeeze(0)
+        #     ann['bbox'] = ann['bbox'].tolist()
+            
+        #     area = ann['area']
+        #     ann['area'] = np.array(ann['area'])
+        #     ann['area'] = ann['area'].squeeze(0)
+        #     ann['area'] = ann['area'].tolist()
+
             
     def accumulate(self, coco_results): # input all predictions
         if len(coco_results) == 0:
             return
         
         image_ids = list(set([res["image_id"] for res in coco_results]))
-
-        # #mask = list(set([res["segmentation"] for res in coco_results]))
-        # rle=coco_results[0]['segmentation']
-        # decoded_mask = mask_util.decode(rle)
-        # mask1 = decoded_mask
-        # mask1 = (mask1 * 255).astype(np.uint8)
-        # #print(mask1.shape,mask1.dtype)
-        # mask1 = Image.fromarray(mask1)
-        # mask_path = f"/content/sample_data/mask_beforeeval.png"
-        # mask1.save(mask_path)
-        
-
         for iou_type in self.iou_types:
             coco_eval = self.coco_eval[iou_type]
             coco_eval.cocoDt = self.coco_gt.loadRes(coco_results) # use the method loadRes
-            #print(iou_type, dir(coco_eval.cocoDt))
             coco_eval.params.imgIds = image_ids # ids of images to be evaluated
             coco_eval.evaluate() # 15.4s
             coco_eval._paramsEval = copy.deepcopy(coco_eval.params)
@@ -65,8 +69,8 @@ def prepare_for_coco(predictions):
     for original_id, prediction in predictions.items():
         if len(prediction) == 0:
             continue
-        #print(prediction,prediction['masks'],prediction['masks'].shape,prediction['masks'].dtype)
-        
+
+
         boxes = prediction["boxes"]
         scores = prediction["scores"]
         labels = prediction["labels"]
@@ -79,29 +83,12 @@ def prepare_for_coco(predictions):
         labels = prediction["labels"].tolist()
 
         masks = masks > 0.5
-        
-        # for j in range(masks.shape[0]):
-        #     mask1 = masks[j].cpu().numpy()
-        #     mask1 = (mask1 * 255).astype(np.uint8)
-        #     #print(mask1.shape,mask1.dtype)
-        #     mask1 = Image.fromarray(mask1)
-        #     mask_path = f"/content/sample_data/mask_score_{j}.png"
-        #     mask1.save(mask_path)
-
         rles = [
             mask_util.encode(np.array(mask[:, :, np.newaxis], dtype=np.uint8, order="F"))[0]
             for mask in masks
         ]
         for rle in rles:
             rle["counts"] = rle["counts"].decode("utf-8")
-
-        # decoded_mask = mask_util.decode(rle)
-        # mask1 = decoded_mask
-        # mask1 = (mask1 * 255).astype(np.uint8)
-        # #print(mask1.shape,mask1.dtype)
-        # mask1 = Image.fromarray(mask1)
-        # mask_path = f"/content/sample_data/mask_decoded_{original_id}.png"
-        # mask1.save(mask_path)
 
         coco_results.extend(
             [
@@ -115,10 +102,17 @@ def prepare_for_coco(predictions):
                 for i, rle in enumerate(rles)
             ]
         )
-    return coco_results    
+    return coco_results      
 
 
-    
+      # decoded_mask = mask_util.decode(rle)
+      # mask1 = decoded_mask
+      # mask1 = (mask1 * 255).astype(np.uint8)
+      # #print(mask1.shape,mask1.dtype)
+      # mask1 = Image.fromarray(mask1)
+      # mask_path = f"/content/sample_data/mask_decoded_{original_id}.png"
+      # mask1.save(mask_path) 
+
     # def prepare(self, predictions, iou_type):
     #     if iou_type == "bbox":
     #         return self.prepare_for_coco_detection(predictions)

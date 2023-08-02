@@ -140,11 +140,22 @@ class MaskRCNN(nn.Module):
         
     def forward(self, image, target=None):
         ori_image_shape = image.shape[-2:]
-        
+
+        # print('image: ', image.shape)
+        # print('bbox: ', target['boxes'].shape)
+        # print('segm: ', target['masks'].shape)
+        # print('label: ', target['labels'].shape)
+
+        image = image.squeeze(0)
         image, target = self.transformer(image, target)
-        #print('img:',image.shape)
-        #print(target['boxes'])
+
+        # print('image: ', image.shape)
+        # print('bbox: ', target['boxes'].shape)
+        # print('segm: ', target['masks'].shape)
+        # print('label: ', target['labels'].shape)
         
+
+
         image_shape = image.shape[-2:]
         feature = self.backbone(image)
         
