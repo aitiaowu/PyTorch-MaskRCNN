@@ -48,6 +48,7 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
     model.train()
     A = time.time()
     min_val_loss = float('inf')
+    val_loss = 10
     best_model_path = None  # 保存最佳模型的路径
     for i, (image, target) in enumerate(data_loader):
         T = time.time()
@@ -73,10 +74,10 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
 
         losses = model(image, target)
 
-        # ca_weights = model.backbone.body.layer3.cbam.ca_weights.detach().cpu().numpy()
-        # sa_weights = model.backbone.body.layer3.cbam.sa_weights.detach().cpu().numpy()
-        # np.save(f'/content/sample_data/ca_weights_{i}.npy', ca_weights)
-        # np.save(f'/content/sample_data/sa_weights_{i}.npy', sa_weights)
+        ca_weights = model.backbone.body.layer3.cbam.ca_weights.detach().cpu().numpy()
+        sa_weights = model.backbone.body.layer3.cbam.sa_weights.detach().cpu().numpy()
+        np.save(f'/content/sample_data/ca_weights_{i}.npy', ca_weights)
+        np.save(f'/content/sample_data/sa_weights_{i}.npy', sa_weights)
 
         total_loss = sum(losses.values())
         #total_loss = sum(losses.values())/accum_iter
@@ -99,21 +100,20 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
         if ((i + 1) % 500 == 0):
           _,val_loss = generate_results(model, val_loader, device, args)
           print('val_loss',val_loss.item())
-          writer.add_scalar("val_loss", val_loss, num_iters)
           if val_loss < min_val_loss:
                 min_val_loss = val_loss
-                model_path = "/content/drive/MyDrive/Study/Thesis/checkpoints/model_cbam" + str(epoch) + '.pth'
+                model_path = f"/content/drive/MyDrive/Study/Thesis/checkpoints/model" + str(epoch) + '.pth'
                 
                 if best_model_path is not None and os.path.exists(best_model_path):
                     os.remove(best_model_path)
 
-                #save_ckpt(model, optimizer, num_iters + i, model_path)
+                save_ckpt(model, optimizer, num_iters + i, model_path)
                 best_model_path = model_path  # 更新最佳模型的路径
                 print('Best model saved at', best_model_path)
 
         #tensorboard
         writer.add_scalar("train_loss", total_loss.item(), num_iters)
-        
+        writer.add_scalar("val_loss", val_loss, num_iters)
         writer.flush()
 
         t_m.update(time.time() - T)
@@ -158,7 +158,7 @@ def evaluate(model, data_loader, device, args, generate=True):
 # generate results file   
 @torch.no_grad()   
 def generate_results(model, data_loader, device, args):
-    iters = 600 if args.iters < 0 else args.iters
+    iters = 100 if args.iters < 0 else args.iters
     val_loss = 0    
     t_m = Meter("total")
     m_m = Meter("model")
@@ -220,7 +220,7 @@ def generate_results(model, data_loader, device, args):
     
 @torch.no_grad()   
 def Genrate(model, data_loader, device, args):
-    iters = 600 if args.iters < 0 else args.iters
+    iters = 100 if args.iters < 0 else args.iters
     val_loss = 0    
     t_m = Meter("total")
     m_m = Meter("model")
