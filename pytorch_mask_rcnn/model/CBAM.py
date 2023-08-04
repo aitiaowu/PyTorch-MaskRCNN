@@ -21,9 +21,10 @@ class CBAM(nn.Module):
         )
 
     def forward(self, x):
-        ca = self.ca(x) * x
-        sa = self.sa(ca)
-        return sa
+        self.ca_weights = self.ca(x)
+        ca = self.ca_weights * x
+        self.sa_weights = self.sa(ca)
+        return ca * self.sa_weights
 
 class CA_Block(nn.Module):
     def __init__(self, channel, reduction=16):

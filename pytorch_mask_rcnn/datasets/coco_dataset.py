@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 from torchvision import transforms 
+import torchvision.transforms.functional as TF
 import torch
 import random
 from .generalized_dataset import GeneralizedDataset
