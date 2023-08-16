@@ -11,30 +11,11 @@ try:
 except:
     pass
 from torch.utils.tensorboard import SummaryWriter
+from .visualizer import show
 
 
 writer = SummaryWriter()
 
-def plot_image_and_annotations(image, target):
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as patches
-    fig, ax = plt.subplots(1)
-    ax.imshow(image)
-
-    # 画出 bounding boxes
-    for box in target['boxes']:
-        xmin, ymin, xmax, ymax = box
-        rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
-                                 linewidth=1, edgecolor='r', facecolor='none')
-        ax.add_patch(rect)
-        
-    # 如果你的 target 中包含 masks，你也可以画出 masks：
-    for mask in target['masks']:
-        ax.imshow(mask, alpha=0.5)
-    imgid = target['image_id']
-
-        # 如果你想保存图片，你可以使用 plt.savefig：
-    plt.savefig("/content/sample_data"+ str(imgid.item()) + ".png")
 
 def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, args):
     for p in optimizer.param_groups:
@@ -58,13 +39,10 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
             for j, p in enumerate(optimizer.param_groups):
                 p["lr"] = 5 * r * args.lr_epoch
 
-        # target['masks'] = target['masks'].squeeze(0)
-        # target['boxes'] = target['boxes'].squeeze(0)
-        # image = image.squeeze(0).permute(1, 2, 0).numpy()
-        # plot_image_and_annotations(image, target)
-        # a
+
         image = image.squeeze(0).to(device)  # [C, H, W]
-        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]  
+        target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+        target['labels'] = target['labels'].squeeze(0).to(device)  
 
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
@@ -74,10 +52,10 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
 
         losses = model(image, target)
 
-        ca_weights = model.backbone.body.layer3.cbam.ca_weights.detach().cpu().numpy()
-        sa_weights = model.backbone.body.layer3.cbam.sa_weights.detach().cpu().numpy()
-        np.save(f'/content/sample_data/ca_weights_{i}.npy', ca_weights)
-        np.save(f'/content/sample_data/sa_weights_{i}.npy', sa_weights)
+        # ca_weights = model.backbone.body.layer3.cbam.ca_weights.detach().cpu().numpy()
+        # sa_weights = model.backbone.body.layer3.cbam.sa_weights.detach().cpu().numpy()
+        # np.save(f'/content/sample_data/ca_weights_{i}.npy', ca_weights)
+        # np.save(f'/content/sample_data/sa_weights_{i}.npy', sa_weights)
 
         total_loss = sum(losses.values())
         #total_loss = sum(losses.values())/accum_iter
@@ -102,12 +80,12 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
           print('val_loss',val_loss.item())
           if val_loss < min_val_loss:
                 min_val_loss = val_loss
-                model_path = f"/content/drive/MyDrive/Study/Thesis/checkpoints/model" + str(epoch) + '.pth'
+                model_path = "/content/drive/MyDrive/Study/Thesis/checkpoints/model_test_" + str(epoch) + '.pth'
                 
                 if best_model_path is not None and os.path.exists(best_model_path):
                     os.remove(best_model_path)
 
-                save_ckpt(model, optimizer, num_iters + i, model_path)
+                #save_ckpt(model, optimizer, num_iters + i, model_path)
                 best_model_path = model_path  # 更新最佳模型的路径
                 print('Best model saved at', best_model_path)
 
@@ -170,6 +148,7 @@ def generate_results(model, data_loader, device, args):
 
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+        target['labels'] = target['labels'].squeeze(0).to(device)
 
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
@@ -193,6 +172,7 @@ def generate_results(model, data_loader, device, args):
 
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]      
+        target['labels'] = target['labels'].squeeze(0).to(device)
 
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
@@ -232,6 +212,7 @@ def Genrate(model, data_loader, device, args):
 
         image = image.squeeze(0).to(device)  # [C, H, W]
         target['masks'] = target['masks'].squeeze(0).to(device)  # [N, H, W]
+        target['labels'] = target['labels'].squeeze(0).to(device)
         #imgid = target['image_id']
         #             # 存储掩码
         # mask_path = "/content/sample_data/mask_gt_"+ imgid + ".png"  # 掩码文件保存路径，使用不同的文件名以区分不同的掩码
@@ -250,9 +231,10 @@ def Genrate(model, data_loader, device, args):
         output = model(image)
 
 
-        
-        ####test masks prediction####
-
+        # target['labels'] = torch.tensor([target['labels'].item()], device='cuda:0')
+        # target['masks'] = target['masks'].unsqueeze(0)
+        # ####test masks prediction####
+        show(image, output, data_loader.classes, "/content/sample_data/{}.jpg".format(i))
 
         m_m.update(time.time() - S)
         

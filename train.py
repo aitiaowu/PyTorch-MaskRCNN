@@ -83,7 +83,8 @@ def main(args):
     print("\nalready trained: {} epochs; to {} epochs".format(start_epoch, args.epochs))
     
     # ------------------------------- train ------------------------------------ #
-        
+    #print(len(train_loader))
+
     for epoch in range(start_epoch, args.epochs):
         print("\nepoch: {}".format(epoch + 1))
             

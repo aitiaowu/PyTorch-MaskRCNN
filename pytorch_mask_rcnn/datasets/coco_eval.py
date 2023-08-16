@@ -6,7 +6,8 @@ import pycocotools.mask as mask_util
 from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
 import random
-
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 class CocoEvaluator:
     def __init__(self, coco_gt, iou_types=["bbox", "segm"]):
@@ -23,25 +24,14 @@ class CocoEvaluator:
         
         self.has_results = False
 
-        
-        # ann_ids = coco_gt.getAnnIds(imgIds=1)
-        # anns = coco_gt.loadAnns(ann_ids)
-        # for ann in anns:
-        #     bbox = ann['bbox']
-        #     ann['bbox'] = np.array(ann['bbox'])
-        #     ann['bbox'] = ann['bbox'].squeeze(0)
-        #     ann['bbox'] = ann['bbox'].tolist()
-            
-        #     area = ann['area']
-        #     ann['area'] = np.array(ann['area'])
-        #     ann['area'] = ann['area'].squeeze(0)
-        #     ann['area'] = ann['area'].tolist()
 
             
     def accumulate(self, coco_results): # input all predictions
         if len(coco_results) == 0:
             return
-        
+
+
+
         image_ids = list(set([res["image_id"] for res in coco_results]))
         for iou_type in self.iou_types:
             coco_eval = self.coco_eval[iou_type]
@@ -69,7 +59,6 @@ def prepare_for_coco(predictions):
     for original_id, prediction in predictions.items():
         if len(prediction) == 0:
             continue
-
 
         boxes = prediction["boxes"]
         scores = prediction["scores"]

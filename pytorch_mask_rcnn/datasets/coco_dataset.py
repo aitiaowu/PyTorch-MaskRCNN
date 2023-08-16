@@ -100,10 +100,10 @@ class COCODataset(GeneralizedDataset):
         #print(labels)
         boxes = torch.tensor(boxes, dtype=torch.float32)
         boxes = self.convert_to_xyxy(boxes)
-        labels = torch.tensor(labels[0])
+        labels = torch.tensor(labels)
         #print(labels.shape)
         masks = torch.stack(masks)
         target = dict(image_id=torch.tensor([img_id]), boxes=boxes, labels=labels, masks=masks)
-
-
+        #print(target['labels'].shape,target['labels'])
+        
         return target

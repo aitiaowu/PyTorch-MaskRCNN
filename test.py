@@ -63,27 +63,27 @@ def main(args):
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=0, drop_last=True)
 
     
-    # device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
-    # cuda = device.type == "cuda"
+    device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
+    cuda = device.type == "cuda"
 
-    # if cuda: pmr.get_gpu_prop(show=True)
-    # print("\ndevice: {}".format(device))
+    if cuda: pmr.get_gpu_prop(show=True)
+    print("\ndevice: {}".format(device))
 
-    # num_classes = 2
-    # model = pmr.maskrcnn_resnet50(False, num_classes).to(device)
+    num_classes = 2
+    model = pmr.maskrcnn_resnet50(False, num_classes).to(device)
 
-    # checkpoint = torch.load(args.ckpt_path, map_location=device)
-    # model.load_state_dict(checkpoint["model"])
-    # del checkpoint
-    # if cuda: torch.cuda.empty_cache()
+    checkpoint = torch.load(args.ckpt_path, map_location=device)
+    model.load_state_dict(checkpoint["model"])
+    del checkpoint
+    if cuda: torch.cuda.empty_cache()
 
-    # #print("\nevaluating...\n")
+    #print("\nevaluating...\n")
 
-    # B = time.time()
-    # eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
-    # B = time.time() - B
+    B = time.time()
+    eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
+    B = time.time() - B
 
-    # print(eval_output.get_AP(), B)
+    print(eval_output.get_AP(), B)
 
     
     # iters = 100
@@ -114,18 +114,18 @@ def main(args):
 
 
 
-    # 使用这个函数
-    for i in range(len(dataset)):
-      image, target = dataset[i]  # 使用你的索引
-      image = image.permute(1, 2, 0).numpy()  # 如果你的图像是 CHW 格式，你需要将它转化为 HWC 格式以便于显示
-      plot_image_and_annotations(image, target)
+    # # 使用这个函数
+    # for i in range(len(dataset)):
+    #   image, target = dataset[i]  # 使用你的索引
+    #   image = image.permute(1, 2, 0).numpy()  # 如果你的图像是 CHW 格式，你需要将它转化为 HWC 格式以便于显示
+    #   plot_image_and_annotations(image, target)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument("--dataset", default="voc")
     parser.add_argument("--data-dir", default="/content/DATA")
-    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_0_3499-6998.pth")
-    parser.add_argument("--iters", type=int, default=1) # number of iterations, minus means the entire dataset
+    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_cbam10-84638.pth")
+    parser.add_argument("--iters", type=int, default=5) # number of iterations, minus means the entire dataset
     args = parser.parse_args([]) # [] is needed if you're using Jupyter Notebook.
 
     args.use_cuda = True

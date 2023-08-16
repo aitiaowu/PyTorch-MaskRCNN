@@ -48,6 +48,7 @@ def maskrcnn_loss(mask_logit, proposal, matched_idx, label, gt_mask):
 
     # 还原索引
     roi[:, 0] = index
+    #print(gt_mask.shape, roi.shape)
 
     mask_target = roi_align(gt_mask, roi, 1., M, M, -1)[:, 0]
     
@@ -163,6 +164,7 @@ class RoIHeads(nn.Module):
             proposal, matched_idx, label, regression_target = self.select_training_samples(proposal, target)
         
         box_feature = self.box_roi_pool(feature, proposal, image_shape)
+        #print(image_shape)
         class_logit, box_regression = self.box_predictor(box_feature)
         
         result, losses = {}, {}
@@ -205,6 +207,8 @@ class RoIHeads(nn.Module):
             
             if self.training:
                 gt_mask = target['masks']
+
+                #print(gt_mask.shape)
                 mask_loss = maskrcnn_loss(mask_logit, mask_proposal, pos_matched_idx, mask_label, gt_mask)
                 losses.update(dict(roi_mask_loss=mask_loss))
                 #print(losses)

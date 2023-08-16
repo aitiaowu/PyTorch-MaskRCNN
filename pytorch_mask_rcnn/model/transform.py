@@ -30,13 +30,21 @@ class Transformer:
     def resize(self, image, target):
         ori_image_shape = image.shape[-2:]
         min_size = float(min(image.shape[-2:]))
+      
         max_size = float(max(image.shape[-2:]))
+        #print(min_size,max_size)
         
         scale_factor = min(self.min_size / min_size, self.max_size / max_size)
-        size = [round(s * scale_factor) for s in ori_image_shape]
-        image = F.interpolate(image[None], size=size, mode='bilinear', align_corners=False)[0]
+        #print(scale_factor)
 
+        size = [round(s * scale_factor) for s in ori_image_shape]
+        #print(size)
+        #print(image.shape)
+        image = F.interpolate(image[None], size=size, mode='bilinear', align_corners=False)[0]
+        #print(image.shape)
+        
         if target is None:
+            #print('No target')
             return image, target
         
         box = target['boxes'].squeeze(0)
@@ -51,7 +59,7 @@ class Transformer:
             mask = target['masks']
             mask = F.interpolate(mask[None].float(), size=size)[0].byte()
             target['masks'] = mask
-            
+
         return image, target
     
     def batched_image(self, image, stride=32):
@@ -60,9 +68,14 @@ class Transformer:
 
         batch_shape = (image.shape[-3],) + max_size
         batched_img = image.new_full(batch_shape, 0)
-        batched_img[:, :image.shape[-2], :image.shape[-1]] = image
+
+        y_padding = (max_size[0] - size[0]) // 2
+        x_padding = (max_size[1] - size[1]) // 2
+        
+        batched_img[:, y_padding:y_padding+image.shape[-2], x_padding:x_padding+image.shape[-1]] = image
 
         return batched_img[None]
+
     
     def postprocess(self, result, image_shape, ori_image_shape):
         box = result['boxes']
