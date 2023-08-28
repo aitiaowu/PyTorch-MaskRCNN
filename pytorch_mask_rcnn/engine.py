@@ -80,7 +80,7 @@ def train_one_epoch(model, optimizer, data_loader, val_loader, device, epoch, ar
           print('val_loss',val_loss.item())
           if val_loss < min_val_loss:
                 min_val_loss = val_loss
-                model_path = "/content/drive/MyDrive/Study/Thesis/checkpoints/model_test_" + str(epoch) + '.pth'
+                model_path = "/content/drive/MyDrive/Study/Thesis/checkpoints/model_prepro_" + str(epoch) + '.pth'
                 
                 if best_model_path is not None and os.path.exists(best_model_path):
                     os.remove(best_model_path)

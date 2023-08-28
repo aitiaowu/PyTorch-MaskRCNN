@@ -8,6 +8,7 @@ from skimage.transform import resize
 import matplotlib.patches as patches
 import numpy as np
 import cv2
+import imgaug.augmenters as iaa
 
 
 def my_collate_fn(batch):
@@ -39,13 +40,24 @@ class COCODataset(GeneralizedDataset):
             ,transforms.ToTensor(),
             transforms.Lambda(lambda x: x > 0.5),  # Binarize the mask
         ])
+
+        self.augmentations = iaa.SomeOf((0, 5), [  #数据增强: 
+            iaa.Fliplr(0.5),
+            iaa.Affine(scale=(0.5, 1.5)),
+            iaa.Affine(rotate=(-45, 45)),
+            iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)})
+        ])
         
-    def get_image(self, img_id):
+    def get_image(self, img_id, angle=None, scale_factor=None):
         img_id = int(img_id)
         img_info = self.coco.imgs[img_id]
         image = Image.open(os.path.join(self.data_dir, "images", img_info["file_name"])).convert('RGB')
         image = self.image_transform(image) 
         #image = self.image_transform(image)
+        if self.train:
+          image = self._add_gaussian_noise(image)
+        image = self._add_gaussian_noise(image)
+        
         return image
     
     @staticmethod
@@ -53,7 +65,7 @@ class COCODataset(GeneralizedDataset):
         x, y, w, h = boxes.T
         return torch.stack((x, y, x + w, y + h), dim=1) # new_box format: (xmin, ymin, xmax, ymax)
         
-    def get_target(self, img_id):
+    def get_target(self, img_id, angle=None, scale_factor=None):
         img_id = int(img_id)
         ann_ids = self.coco.getAnnIds(img_id)
         img_id = int(img_id)
@@ -105,5 +117,57 @@ class COCODataset(GeneralizedDataset):
         masks = torch.stack(masks)
         target = dict(image_id=torch.tensor([img_id]), boxes=boxes, labels=labels, masks=masks)
         #print(target['labels'].shape,target['labels'])
+
+        
         
         return target
+
+
+    def _rotate_point(self, origin, point, angle):
+        """
+        Rotate a point counterclockwise by a given angle around a given origin.
+        """
+        angle = np.deg2rad(angle)
+        ox, oy = origin
+        px, py = point
+
+        qx = ox + np.cos(angle) * (px - ox) - np.sin(angle) * (py - oy)
+        qy = oy + np.sin(angle) * (px - ox) + np.cos(angle) * (py - oy)
+        return qx, qy
+
+    def _random_rotation(self, image, mask, bbox, min_angle=-30, max_angle=30):
+        angle = np.random.randint(min_angle, max_angle)
+        rotated_image = image.rotate(angle)
+        rotated_mask = mask.rotate(angle)
+
+        # Rotate bbox
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        corners = [(bbox[0], bbox[1]), (bbox[0], bbox[3]), (bbox[2], bbox[1]), (bbox[2], bbox[3])]
+        corners_rotated = [self._rotate_point((cx, cy), corner, angle) for corner in corners]
+        
+        min_x = min([x for x, y in corners_rotated])
+        min_y = min([y for x, y in corners_rotated])
+        max_x = max([x for x, y in corners_rotated])
+        max_y = max([y for x, y in corners_rotated])
+        
+        rotated_bbox = [min_x, min_y, max_x, max_y]
+        return rotated_image, rotated_mask, rotated_bbox
+
+    def _random_scaling(self, image, mask, bbox, min_scale=0.8, max_scale=1.2):
+        scale_factor = np.random.uniform(min_scale, max_scale)
+        new_size = (int(image.width * scale_factor), int(image.height * scale_factor))
+        scaled_image = image.resize(new_size, Image.BILINEAR)
+        scaled_mask = mask.resize(new_size, Image.BILINEAR)
+
+        # Scale bbox
+        scaled_bbox = [coord * scale_factor for coord in bbox]
+        return scaled_image, scaled_mask, scaled_bbox
+
+    def _add_gaussian_noise(self, image, mean=0, var=10):
+        row, col, ch = np.array(image).shape
+        sigma = var**0.5
+        gauss = np.random.normal(mean, sigma, (row, col, ch))
+        gauss = gauss.reshape(row, col, ch)
+        noisy_image_array = np.clip(np.array(image) + gauss, 0, 255).astype(np.uint8)
+        noisy_image = Image.fromarray(noisy_image_array)
+        return noisy_image
