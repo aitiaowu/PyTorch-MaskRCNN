@@ -149,13 +149,6 @@ class MaskRCNN(nn.Module):
         image = image.squeeze(0)
         image, target = self.transformer(image, target)
 
-        # print('image: ', image.shape)
-        
-        # print('bbox: ', target['boxes'].shape)
-        # print('segm: ', target['masks'].shape)
-        # print('label: ', target['labels'].shape)
-        
-
         image_shape = image.shape[-2:]
         feature = self.backbone(image)
         

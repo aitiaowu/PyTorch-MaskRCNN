@@ -3,7 +3,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch
 from torchvision import transforms
-
+import random
 
 class GeneralizedDataset:
     """
@@ -13,13 +13,16 @@ class GeneralizedDataset:
     def __init__(self, max_workers=2, verbose=False):
         self.max_workers = max_workers
         self.verbose = verbose
-            
+        self.scale_range = (0.8, 1.2)   
     def __getitem__(self, index):
       while True:
+          scale_factor = random.uniform(self.scale_range[0], self.scale_range[1]) if self.train else 0
+          flip = False if self.train else False
           img_id = self.ids[index]
-          image = self.get_image(img_id)
+          image = self.get_image(img_id,scale_factor,flip)
           image = transforms.ToTensor()(image)
-          target = self.get_target(img_id) if self.train else {}
+
+          target = self.get_target(img_id,scale_factor,flip) if self.train else {}
 
           if target is not None:
               return image, target

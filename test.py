@@ -18,9 +18,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 def plot_image_and_annotations(image, target):
+    
     fig, ax = plt.subplots(1)
     ax.imshow(image)
-    
+
     # 画出 bounding boxes
     for box in target['boxes']:
         xmin, ymin, xmax, ymax = box
@@ -119,13 +120,14 @@ def main(args):
       image, target = dataset[i]  # 使用你的索引
       image = image.permute(1, 2, 0).numpy()  # 如果你的图像是 CHW 格式，你需要将它转化为 HWC 格式以便于显示
       plot_image_and_annotations(image, target)
+      
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument("--dataset", default="voc")
     parser.add_argument("--data-dir", default="/content/DATA")
-    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model6-58982.pth")
-    parser.add_argument("--iters", type=int, default=300) # number of iterations, minus means the entire dataset
+    parser.add_argument("--ckpt-path", default="/content/drive/MyDrive/Study/Thesis/checkpoints/model_cbam10-84638.pth")
+    parser.add_argument("--iters", type=int, default=5) # number of iterations, minus means the entire dataset
     args = parser.parse_args([]) # [] is needed if you're using Jupyter Notebook.
 
     args.use_cuda = True
