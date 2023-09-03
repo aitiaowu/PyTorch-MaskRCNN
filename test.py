@@ -18,10 +18,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 def plot_image_and_annotations(image, target):
-    
     fig, ax = plt.subplots(1)
     ax.imshow(image)
-
+    
     # 画出 bounding boxes
     for box in target['boxes']:
         xmin, ymin, xmax, ymax = box
@@ -35,7 +34,7 @@ def plot_image_and_annotations(image, target):
     imgid = target['image_id']
 
         # 如果你想保存图片，你可以使用 plt.savefig：
-    plt.savefig("/content/sample_data/gt_"+ str(imgid.item()) + ".png")
+    plt.savefig("/content/drive/MyDrive/Study/Thesis/data/test/gt_"+ str(imgid.item()) + ".png")
     
 
 
@@ -70,21 +69,21 @@ def main(args):
     if cuda: pmr.get_gpu_prop(show=True)
     print("\ndevice: {}".format(device))
 
-    # num_classes = 2
-    # model = pmr.maskrcnn_resnet50(False, num_classes).to(device)
+    num_classes = 2
+    model = pmr.maskrcnn_resnet50(False, num_classes).to(device)
 
-    # checkpoint = torch.load(args.ckpt_path, map_location=device)
-    # model.load_state_dict(checkpoint["model"])
-    # del checkpoint
-    # if cuda: torch.cuda.empty_cache()
+    checkpoint = torch.load(args.ckpt_path, map_location=device)
+    model.load_state_dict(checkpoint["model"])
+    del checkpoint
+    if cuda: torch.cuda.empty_cache()
 
-    # #print("\nevaluating...\n")
+    #print("\nevaluating...\n")
 
-    # B = time.time()
-    # eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
-    # B = time.time() - B
+    B = time.time()
+    eval_output, iter_eval = pmr.evaluate(model, test_dataset.dataset, device, args, generate=True)
+    B = time.time() - B
 
-    # print(eval_output.get_AP(), B)
+    print(eval_output.get_AP(), B)
 
     
     # iters = 100
@@ -115,12 +114,11 @@ def main(args):
 
 
 
-    # 使用这个函数
-    for i in range(len(dataset)):
-      image, target = dataset[i]  # 使用你的索引
-      image = image.permute(1, 2, 0).numpy()  # 如果你的图像是 CHW 格式，你需要将它转化为 HWC 格式以便于显示
-      plot_image_and_annotations(image, target)
-      
+    # # 使用这个函数
+    # for i in range(len(dataset)):
+    #   image, target = dataset[i]  # 使用你的索引
+    #   image = image.permute(1, 2, 0).numpy()  # 如果你的图像是 CHW 格式，你需要将它转化为 HWC 格式以便于显示
+    #   plot_image_and_annotations(image, target)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
