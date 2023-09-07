@@ -149,13 +149,6 @@ class MaskRCNN(nn.Module):
         image = image.squeeze(0)
         image, target = self.transformer(image, target)
 
-        # print('image: ', image.shape)
-        
-        # print('bbox: ', target['boxes'].shape)
-        # print('segm: ', target['masks'].shape)
-        # print('label: ', target['labels'].shape)
-        
-
         image_shape = image.shape[-2:]
         feature = self.backbone(image)
         
@@ -288,14 +281,14 @@ def maskrcnn_resnet50(pretrained, num_classes, pretrained_backbone=True):
                 continue
             msd[name].copy_(pretrained_msd[i])
 
-        # ###for attention
-        for i, name in enumerate(msd):
-            #print(name)
-            if name == 'backbone.cbam.ca.fc1.weight' or 'backbone.cbam.ca.fc2.weight':
-                continue
-            if i in skip_list:
-                continue
-            msd[name].copy_(pretrained_msd[i])
+        # # ###for attention
+        # for i, name in enumerate(msd):
+        #     #print(name)
+        #     if name == 'backbone.cbam.ca.fc1.weight' or 'backbone.cbam.ca.fc2.weight':
+        #         continue
+        #     if i in skip_list:
+        #         continue
+        #     msd[name].copy_(pretrained_msd[i])
                         
         model.load_state_dict(msd)
     
